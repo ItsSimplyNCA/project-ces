@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efe8572f50abcbb4498db600f48c39fe, type: 3}
+  m_Name: FluidPipeT1BuildingDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinition
+  prefab: {fileID: 3644209771566323786, guid: 21a783b7e97c59142a7104030338f4d3, type: 3}
+  size: {x: 1, y: 1, z: 1}
+  item: {fileID: 11400000, guid: 534ee49662b183e45a06b8e30438bfb1, type: 2}
+  requiresSupport: 0
