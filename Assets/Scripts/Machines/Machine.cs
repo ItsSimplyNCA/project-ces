@@ -37,6 +37,31 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
         ContainsFluids(fluidInputSlots) ||
         ContainsFluids(fluidOutputSlots);
 
+    public float SuppliedPowerMW { get; private set; }
+
+    public float RequestedPowerMW {
+        get {
+            if (!isOn) return 0f;
+            if (activeRecipe != null) return activeRecipe.PowerDemandMW;
+            if (!SupportsRecipe(selectedRecipe)) return 0f;
+            if (!HasRequiredInputs(selectedRecipe)) return 0f;
+            if (!HasRequiredFluidInputs(selectedRecipe)) return 0f;
+            if (!CanFitOutputs(selectedRecipe)) return 0f;
+            if (!CanFitFluidOutputs(selectedRecipe)) return 0f;
+            return selectedRecipe.PowerDemandMW;
+        }
+    }
+
+    public float PowerRatio {
+        get {
+            if (!isOn) return 0f;
+            RecipeDefinition recipe = activeRecipe != null ? activeRecipe : selectedRecipe;
+            if (recipe == null) return 0f;
+            if (recipe.PowerDemandMW <= 0f) return 1f;
+            return Mathf.Clamp01(SuppliedPowerMW / recipe.PowerDemandMW);
+        }
+    }
+
     public void Awake() {
         inputSlots = CreateSlots(inputSlotCount);
         outputSlots = CreateSlots(outputSlotCount);
@@ -56,7 +81,7 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
         if (!isOn) return;
         if (activeRecipe == null && !TryStartCrafting()) return;
 
-        craftingElapsed += Time.deltaTime * GetRecipeSpeedMultiplier(activeRecipe);
+        craftingElapsed += Time.deltaTime * GetRecipeSpeedMultiplier(activeRecipe) * PowerRatio;
 
         if (craftingElapsed >= activeRecipe.Duration) {
             CompleteCrafting();
@@ -263,6 +288,7 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
         if (!HasRequiredFluidInputs(selectedRecipe)) return false;
         if (!CanFitOutputs(selectedRecipe)) return false;
         if (!CanFitFluidOutputs(selectedRecipe)) return false;
+        if (selectedRecipe.PowerDemandMW > 0f && SuppliedPowerMW <= 0f) return false;
 
         activeRecipe = selectedRecipe;
 
@@ -447,6 +473,10 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
 
     public FluidCellData GetInputSlotFluidCell(int slotIndex) {
         return inputSlots[slotIndex].FluidCell;
+    }
+
+    public void SetSuppliedPower(float powerMW) {
+        SuppliedPowerMW = Mathf.Max(0f, powerMW);
     }
 
     // DEBUG METHODS

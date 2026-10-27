@@ -15,6 +15,7 @@ MonoBehaviour:
   recipeId: test_fluid
   recipeName: Fluid Transfer Test
   duration: 5
+  powerDemandMW: 10
   inputs: []
   outputs: []
   minimumMachineTier: 1

@@ -153,6 +153,10 @@ public class MachineGUI : MonoBehaviour {
             machineProgressText.text = machine.IsOn ? "Status: Idle" : "Status: OFF";
         }
 
+        machineProgressText.text +=
+            $"\nPower: {machine.SuppliedPowerMW:0.###}" +
+            $" / {machine.RequestedPowerMW:0.###} MW";
+        
         RefreshMachineInventory();
         machineFluidGUI.Refresh();
     }

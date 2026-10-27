@@ -11,7 +11,7 @@ public static class EnergyEndpointDiscovery {
         PipeConnections.Bottom
     };
 
-    public static List<EnergyEndpoint> CollecConnectedEndpoints(EnergyCableSegment start, GridWorld gridWorld) {
+    public static List<EnergyEndpoint> CollectConnectedEndpoints(EnergyCableSegment start, GridWorld gridWorld) {
         List<EnergyEndpoint> endpoints = new();
 
         if (start == null || start.Definition == null || gridWorld == null) return endpoints;

@@ -121,7 +121,7 @@ public class EnergyCableSegment : MonoBehaviour {
 
         if (gridWorld == null) return;
 
-        var endpoints = EnergyEndpointDiscovery.CollecConnectedEndpoints(this, gridWorld);
+        var endpoints = EnergyEndpointDiscovery.CollectConnectedEndpoints(this, gridWorld);
 
         Debug.Log($"Energy endpoints: {endpoints.Count}", this);
 

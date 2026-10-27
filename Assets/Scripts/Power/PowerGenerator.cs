@@ -12,21 +12,19 @@ public class PowerGenerator : MonoBehaviour {
 
     public void SetOn(bool value) {
         isOn = value;
+
+        if (value) {
+            isTripped = false;
+        }
     }
 
     public void Trip() {
         if (isTripped) return;
 
         isTripped = true;
+        isOn = false;
 
         Debug.LogWarning("Generator tripped: overload", this);
-    }
-
-    public void Restart() {
-        isTripped = false;
-        isOn = true;
-
-        Debug.Log("Generator restarted", this);
     }
 
     [ContextMenu("Debug/Toggle ON-OFF")]
@@ -34,12 +32,5 @@ public class PowerGenerator : MonoBehaviour {
         if (!Application.isPlaying) return;
 
         SetOn(!isOn);
-    }
-
-    [ContextMenu("Debug/Restart Generator")]
-    private void RestartForDebug() {
-        if (!Application.isPlaying) return;
-
-        Restart();
     }
 }
