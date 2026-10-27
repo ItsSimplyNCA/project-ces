@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efe8572f50abcbb4498db600f48c39fe, type: 3}
+  m_Name: ItemPipeT1BuildingDefinition
+  m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinition
+  prefab: {fileID: 3644209771566323786, guid: 7a6abb0e2e8b10541b4d7ab0bcd37b63, type: 3}
+  size: {x: 1, y: 1, z: 1}
+  item: {fileID: 11400000, guid: 8a40c8800ee7bb14e856dca32192d1a6, type: 2}
+  requiresSupport: 0
