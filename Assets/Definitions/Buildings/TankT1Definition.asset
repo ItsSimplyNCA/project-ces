@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 2, z: 1}
   item: {fileID: 11400000, guid: 4c0b78f4afb81634885f553a36c533b5, type: 2}
   requiresSupport: 1
+  buildingId: tank_t1

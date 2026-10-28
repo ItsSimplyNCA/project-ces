@@ -13,7 +13,7 @@ public class RecipeDefinition : ScriptableObject {
     [SerializeField] private FluidAmount[] fluidInputs = System.Array.Empty<FluidAmount>();
     [SerializeField] private FluidAmount[] fluidOutputs = System.Array.Empty<FluidAmount>();
 
-    public string RecipeIp => recipeId;
+    public string RecipeId => recipeId;
     public string RecipeName => recipeName;
     public float Duration => duration;
     public int MinimumMachineTier => minimumMachineTier;

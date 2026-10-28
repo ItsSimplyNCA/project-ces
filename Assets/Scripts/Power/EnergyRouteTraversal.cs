@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 public static class EnergyRouteTraversal {
@@ -16,7 +15,8 @@ public static class EnergyRouteTraversal {
         EnergyCableSegment start,
         EnergyCableSegment target,
         GridWorld gridWorld,
-        EnergyTransferBudget transferBudget = null
+        EnergyTransferBudget transferBudget = null,
+        bool allowStorageTansit = false
     ) {
         if (start == null || target == null || gridWorld == null || start.Definition == null || target.Definition == null) return null;
         if (start.GetComponentInParent<GridWorld>() != gridWorld || target.GetComponentInParent<GridWorld>() != gridWorld) return null;
@@ -27,11 +27,10 @@ public static class EnergyRouteTraversal {
 
         if (!HasCapacity(start) || !HasCapacity(target)) return null;
 
-        Dictionary<EnergyCableSegment, EnergyCableSegment> parents = new();
-        Dictionary<EnergyCableSegment, PowerBreaker> crossedBreakers = new();
+        Dictionary<EnergyCableSegment, (EnergyCableSegment Parent, PowerBreaker Breaker, PowerStorage Storage)> parents = new();
         Queue<EnergyCableSegment> pending = new();
 
-        parents.Add(start, null);
+        parents.Add(start, (null, null, null));
         pending.Enqueue(start);
 
         while (pending.Count > 0) {
@@ -40,31 +39,38 @@ public static class EnergyRouteTraversal {
             if (current == target) {
                 List<EnergyCableSegment> cables = new();
                 List<PowerBreaker> breakers = new();
+                List<PowerStorage> storages = new();
 
                 while (current != null) {
                     cables.Add(current);
 
-                    if (crossedBreakers.TryGetValue(current, out PowerBreaker breaker) && breaker != null) {
-                        breakers.Add(breaker);
+                    var step = parents[current];
+
+                    if (step.Breaker != null) {
+                        breakers.Add(step.Breaker);
                     }
 
-                    current = parents[current];
+                    if (step.Storage != null) {
+                        storages.Add(step.Storage);
+                    }
+
+                    current = step.Parent;
                 }
 
                 cables.Reverse();
                 breakers.Reverse();
+                storages.Reverse();
 
-                return new EnergyRoute(cables, breakers);
+                return new EnergyRoute(cables, breakers, storages);
             }
 
-            foreach (var step in GetNextSteps(current, gridWorld)) {
+            foreach (var step in GetNextSteps(current, gridWorld, allowStorageTansit)) {
                 EnergyCableSegment next = step.Cable;
 
                 if (!HasCapacity(next)) continue;
                 if (parents.ContainsKey(next)) continue;
 
-                parents.Add(next, current);
-                crossedBreakers.Add(next, step.Breaker);
+                parents.Add(next, (current, step.Breaker, step.Storage));
                 pending.Enqueue(next);
             }
         }
@@ -72,7 +78,11 @@ public static class EnergyRouteTraversal {
         return null;
     }
 
-    private static IEnumerable<(EnergyCableSegment Cable, PowerBreaker Breaker)> GetNextSteps(EnergyCableSegment current, GridWorld gridWorld) {
+    private static IEnumerable<(EnergyCableSegment Cable, PowerBreaker Breaker, PowerStorage Storage)> GetNextSteps(
+        EnergyCableSegment current,
+        GridWorld gridWorld,
+        bool allowStorageTansit
+    ) {
         foreach (PipeConnections face in Faces) {
             if (!current.HasConnection(face)) continue;
 
@@ -84,16 +94,23 @@ public static class EnergyRouteTraversal {
 
             if (neighbor != null && neighbor.Definition != null) {
                 if (neighbor.HasConnection(PipeSegment.GetOpposite(face))) {
-                    yield return (neighbor, null);
+                    yield return (neighbor, null, null);
                 }
 
                 continue;
             }
 
-            PowerBreaker breaker = building.GetComponent<PowerBreaker>();
             UniversalIO universalIO = building.GetComponent<UniversalIO>();
 
-            if (breaker == null || !breaker.ConductsPower || universalIO == null) continue;
+            if (universalIO == null) continue;
+
+            PowerBreaker breaker = building.GetComponent<PowerBreaker>();
+            PowerStorage storage = building.GetComponent<PowerStorage>();
+
+            if (breaker != null) {
+                if (!breaker.ConductsPower) continue;
+                storage = null;
+            } else if (storage == null || !allowStorageTansit) continue;
 
             bool hasConnectedInput = false;
 
@@ -124,12 +141,12 @@ public static class EnergyRouteTraversal {
 
                 if (outputCable == null || outputCable.Definition == null) continue;
 
-                Vector3Int directionToBreaker = Vector3Int.RoundToInt(-universalIO.GetWorldDirection(output));
-                PipeConnections outputCableFace = PipeSegment.GetFaceFromOffset(directionToBreaker);
+                Vector3Int directionToBuilding = Vector3Int.RoundToInt(-universalIO.GetWorldDirection(output));
+                PipeConnections outputCableFace = PipeSegment.GetFaceFromOffset(directionToBuilding);
 
                 if (!outputCable.HasConnection(outputCableFace)) continue;
 
-                yield return (outputCable, breaker);
+                yield return (outputCable, breaker, storage);
             }
         }
     }

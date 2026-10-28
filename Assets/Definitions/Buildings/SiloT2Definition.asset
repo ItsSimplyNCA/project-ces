@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 2, z: 1}
   item: {fileID: 11400000, guid: dffd063591bd431489e6ebb85b16b15b, type: 2}
   requiresSupport: 1
+  buildingId: silo_t2

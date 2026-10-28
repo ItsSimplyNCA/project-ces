@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 2, y: 3, z: 1}
   item: {fileID: 11400000, guid: a4a9ef46423a32940bc2a15287aa6459, type: 2}
   requiresSupport: 1
+  buildingId: test_machine

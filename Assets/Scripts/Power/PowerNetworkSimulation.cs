@@ -26,26 +26,43 @@ public class PowerNetworkSimulation : MonoBehaviour {
         public readonly List<EnergyEndpoint> Inputs = new();
     }
 
+    private class CachedCableNetwork {
+        public List<EnergyCableSegment> Cables;
+        public List<EnergyEndpoint> Endpoints;
+    }
+
     private readonly EnergyTransferBudget transferBudget = new();
+    private readonly EnergyStorageFlowTracker storageFlowTracker = new();
+    private readonly Dictionary<EnergyCableSegment, CachedCableNetwork> cableNetworkCache = new();
+    private readonly Dictionary<(EnergyCableSegment Start, EnergyCableSegment Target), EnergyRoute> routeCache = new();
     private int firstConsumerIndex;
     private int firstSourceIndex;
+    private Machine[] cachedMachines = System.Array.Empty<Machine>();
+    private PowerStorage[] cachedStorages = System.Array.Empty<PowerStorage>();
+    private EnergyCableSegment[] cachedCables = System.Array.Empty<EnergyCableSegment>();
+    private bool buildingCacheDirty = true;
 
     private void Update() {
         float deltaTime = Time.deltaTime;
         
         if (deltaTime <= 0f) return;
 
-        foreach (PowerStorage storage in gridWorld.GetComponentsInChildren<PowerStorage>()) {
+        if (buildingCacheDirty) {
+            RefreshBuildingCache();
+        }
+
+        foreach (PowerStorage storage in cachedStorages) {
             storage.BeginSimulationStep();
         }
 
-        foreach (Machine machine in gridWorld.GetComponentsInChildren<Machine>()) {
+        foreach (Machine machine in cachedMachines) {
             machine.SetSuppliedPower(0f);
         }
 
-        EnergyCableSegment[] cables = gridWorld.GetComponentsInChildren<EnergyCableSegment>();
+        EnergyCableSegment[] cables = cachedCables;
         
         transferBudget.BeginCalculation(cables);
+        storageFlowTracker.BeginCalculation();
 
         Dictionary<MonoBehaviour, Source> sourcesByOwner = new();
         Dictionary<Machine, Consumer> consumersByMachine = new();
@@ -58,13 +75,13 @@ public class PowerNetworkSimulation : MonoBehaviour {
         foreach (EnergyCableSegment cable in cables) {
             if (cable.Definition == null || visited.Contains(cable)) continue;
 
-            var network = EnergyNetworkTraversal.CollectConnected(cable, gridWorld);
+            CachedCableNetwork network = GetCachedCableNetwork(cable);
 
-            foreach (EnergyCableSegment member in network) {
+            foreach (EnergyCableSegment member in network.Cables) {
                 visited.Add(member);
             }
 
-            var endpoints = EnergyEndpointDiscovery.CollectConnectedEndpoints(cable, gridWorld);
+            List<EnergyEndpoint> endpoints = network.Endpoints;
 
             foreach (EnergyEndpoint endpoint in endpoints) {
                 if (endpoint.Port.Mode == PortMode.EnergyOutput) {
@@ -138,13 +155,19 @@ public class PowerNetworkSimulation : MonoBehaviour {
             firstConsumerIndex = (firstConsumerIndex + 1) % consumers.Count;
         }
 
+        List<ChargeTarget> chargeTargets = AllocateStorageCharging(cables, sources, deltaTime);
+
         foreach (Source source in sources) {
             if (!source.State.IsStorage) continue;
 
             source.State.Storage.SupplyPower(source.State.AllocatedPowerMW, deltaTime);
         }
 
-        ChargeStorages(cables, sources, deltaTime);
+        foreach (ChargeTarget target in chargeTargets) {
+            target.Storage.ReceivePower(target.ReceivedPowerMW, deltaTime);
+        }
+
+        storageFlowTracker.ApplyTransitStatistics();
     }
 
     private float TryAllocate(Consumer consumer, List<Source> sources) {
@@ -165,11 +188,10 @@ public class PowerNetworkSimulation : MonoBehaviour {
 
                 foreach (EnergyEndpoint output in source.Outputs) {
                     foreach (EnergyEndpoint input in consumer.Inputs) {
-                        EnergyRoute route = EnergyRouteTraversal.FindRoute(
+                        EnergyRoute route = GetEnergyRoute(
                             output.Cable,
                             input.Cable,
-                            gridWorld,
-                            transferBudget
+                            true
                         );
 
                         if (route == null) continue;
@@ -186,6 +208,7 @@ public class PowerNetworkSimulation : MonoBehaviour {
                         if (allocatedPower <= 0f) continue;
 
                         transferBudget.Consume(route.Cables, allocatedPower);
+                        storageFlowTracker.RecordTransfer(route, allocatedPower);
 
                         consumer.RemainingDemandMW -= allocatedPower;
                         consumer.SuppliedPowerMW += allocatedPower;
@@ -248,7 +271,11 @@ public class PowerNetworkSimulation : MonoBehaviour {
 
                 foreach (EnergyEndpoint output in source.Outputs) {
                     foreach (EnergyEndpoint input in consumer.Inputs) {
-                        EnergyRoute route = EnergyRouteTraversal.FindRoute(output.Cable, input.Cable, gridWorld);
+                        EnergyRoute route = GetEnergyRoute(
+                            output.Cable,
+                            input.Cable,
+                            false
+                        );
 
                         if (route == null) continue;
 
@@ -328,7 +355,7 @@ public class PowerNetworkSimulation : MonoBehaviour {
         return source.State.RemainingPowerMW;
     }
 
-    private void ChargeStorages(EnergyCableSegment[] cables, List<Source> sources, float deltaTime) {
+    private List<ChargeTarget> AllocateStorageCharging(EnergyCableSegment[] cables, List<Source> sources, float deltaTime) {
         Dictionary<PowerStorage, ChargeTarget> targetsByStorage = new();
         List<ChargeTarget> targets = new();
 
@@ -353,17 +380,21 @@ public class PowerNetworkSimulation : MonoBehaviour {
                 if (storage == null) continue;
 
                 if (!targetsByStorage.TryGetValue(storage, out ChargeTarget target)) {
-                    float remainingTransferLimit = storage.TransferLimitMW;
+                    float plannedDischargeMW = 0f;
 
                     foreach (Source source in sources) {
-                        if (source.State.Storage != storage) continue;
-
-                        remainingTransferLimit = Mathf.Max(0f, remainingTransferLimit - source.State.AllocatedPowerMW);
+                        if (source.State.Storage == storage) {
+                            plannedDischargeMW = source.State.AllocatedPowerMW;
+                            break;
+                        }
                     }
+
+                    float availableSpace = Mathf.Max(0f, storage.CapacityMW - storage.StoredPowerMW);
+                    float capacityLimitedRate = availableSpace / deltaTime + plannedDischargeMW;
 
                     target = new ChargeTarget {
                         Storage = storage,
-                        RemainingDemandMW = Mathf.Min(storage.GetAvailableChargePowerMW(deltaTime), remainingTransferLimit)
+                        RemainingDemandMW = capacityLimitedRate
                     };
 
                     targetsByStorage.Add(storage, target);
@@ -378,7 +409,7 @@ public class PowerNetworkSimulation : MonoBehaviour {
 
         do {
             madeProgress = false;
-            
+
             foreach (ChargeTarget target in targets) {
                 if (TryAllocateCharge(target, sources) > 0f) {
                     madeProgress = true;
@@ -386,49 +417,53 @@ public class PowerNetworkSimulation : MonoBehaviour {
             }
         } while (madeProgress);
 
-        foreach (ChargeTarget target in targets) {
-            target.Storage.ReceivePower(target.ReceivedPowerMW, deltaTime);
-        }
+        return targets;
     }
 
     private float TryAllocateCharge(ChargeTarget target, List<Source> sources) {
         if (target.RemainingDemandMW <= 0f) return 0f;
 
-        foreach (Source source in sources) {
-            if (source.State.Generator == null) continue;
+        for (int pass = 0; pass < 2; pass++) {
+            bool useStorage = pass == 1;
 
-            float remainingPower = GetRemainingPower(source);
+            for (int i = 0; i < sources.Count; i++) {
+                int sourceIndex = (firstConsumerIndex + i) % sources.Count;
+                Source source = sources[sourceIndex];
 
-            if (remainingPower <= 0f) continue;
+                if (source.State.IsStorage != useStorage) continue;
+                if (source.State.Storage == target.Storage) continue;
 
-            foreach (EnergyEndpoint output in source.Outputs) {
-                foreach (EnergyEndpoint input in target.Inputs) {
-                    EnergyRoute route = EnergyRouteTraversal.FindRoute(
-                        output.Cable,
-                        input.Cable,
-                        gridWorld,
-                        transferBudget
-                    );
+                float remainingPower = GetRemainingPower(source);
 
-                    if (route == null) continue;
+                if (remainingPower <= 0f) continue;
 
-                    float requestedPower = Mathf.Min(ALLOCATION_QUANTUM_MW, target.RemainingDemandMW);
+                foreach (EnergyEndpoint output in source.Outputs) {
+                    foreach (EnergyEndpoint input in target.Inputs) {
+                        EnergyRoute route = GetEnergyRoute(
+                            output.Cable,
+                            input.Cable,
+                            true
+                        );
 
-                    requestedPower = Mathf.Min(requestedPower, remainingPower);
-                    requestedPower = Mathf.Min(requestedPower, transferBudget.GetAvailable(route.Cables));
+                        if (route == null) continue;
 
-                    if (requestedPower <= 0f) continue;
+                        float requestedPower = Mathf.Min(ALLOCATION_QUANTUM_MW, target.RemainingDemandMW);
 
-                    float allocatedPower = source.State.Allocate(requestedPower);
+                        requestedPower = Mathf.Min(requestedPower, remainingPower);
+                        requestedPower = Mathf.Min(requestedPower, transferBudget.GetAvailable(route.Cables));
 
-                    if (allocatedPower <= 0f) continue;
+                        if (requestedPower <= 0f) continue;
 
-                    transferBudget.Consume(route.Cables, allocatedPower);
+                        float allocatedPower = source.State.Allocate(requestedPower);
 
-                    target.RemainingDemandMW -= allocatedPower;
-                    target.ReceivedPowerMW += allocatedPower;
+                        transferBudget.Consume(route.Cables, allocatedPower);
+                        storageFlowTracker.RecordTransfer(route, allocatedPower);
 
-                    return allocatedPower;
+                        target.RemainingDemandMW -= allocatedPower;
+                        target.ReceivedPowerMW += allocatedPower;
+
+                        return allocatedPower;
+                    }
                 }
             }
         }
@@ -436,11 +471,77 @@ public class PowerNetworkSimulation : MonoBehaviour {
         return 0f;
     }
 
+    private void OnEnable() {
+        buildingCacheDirty = true;
+
+        cableNetworkCache.Clear();
+        routeCache.Clear();
+
+        gridWorld.LogisticsChanged += OnLogisticsChanged;
+    }
+
+    private void OnLogisticsChanged() {
+        buildingCacheDirty = true;
+
+        cableNetworkCache.Clear();
+        routeCache.Clear();
+    }
+
+    private void RefreshBuildingCache() {
+        cachedMachines = gridWorld.GetComponentsInChildren<Machine>();
+        cachedStorages = gridWorld.GetComponentsInChildren<PowerStorage>();
+        cachedCables = gridWorld.GetComponentsInChildren<EnergyCableSegment>();
+
+        buildingCacheDirty = false;
+    }
+
+    private CachedCableNetwork GetCachedCableNetwork(EnergyCableSegment start) {
+        if (cableNetworkCache.TryGetValue(start, out CachedCableNetwork cachedNetwork)) {
+            return cachedNetwork;
+        }
+
+        List<EnergyCableSegment> cables = EnergyNetworkTraversal.CollectConnected(start, gridWorld);
+        List<EnergyEndpoint> endpoints = EnergyEndpointDiscovery.CollectConnectedEndpoints(start, gridWorld);
+
+        cachedNetwork = new CachedCableNetwork {
+            Cables = cables,
+            Endpoints = endpoints
+        };
+
+        foreach (EnergyCableSegment cable in cables) {
+            cableNetworkCache[cable] = cachedNetwork;
+        }
+
+        return cachedNetwork;
+    }
+
+    private EnergyRoute GetEnergyRoute(EnergyCableSegment start, EnergyCableSegment target, bool respectCapacity) {
+        if (start == null || target == null) return null;
+
+        var key = (start, target);
+
+        if (!routeCache.TryGetValue(key, out EnergyRoute route)) {
+            route = EnergyRouteTraversal.FindRoute(start, target, gridWorld, null, true);
+            routeCache[key] = route;
+        }
+
+        if (route == null || !respectCapacity) return route;
+        if (transferBudget.GetAvailable(route.Cables) > 0f) return route;
+
+        return EnergyRouteTraversal.FindRoute(start, target, gridWorld, transferBudget, true);
+    }
+
     private void OnDisable() {
         if (gridWorld == null) return;
 
+        gridWorld.LogisticsChanged -= OnLogisticsChanged;
+
         foreach (Machine machine in gridWorld.GetComponentsInChildren<Machine>()) {
             machine.SetSuppliedPower(0f);
+        }
+
+        foreach (PowerStorage storage in gridWorld.GetComponentsInChildren<PowerStorage>()) {
+            storage.BeginSimulationStep();
         }
     }
 }

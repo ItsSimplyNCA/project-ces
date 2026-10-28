@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 1, z: 1}
   item: {fileID: 11400000, guid: 8a40c8800ee7bb14e856dca32192d1a6, type: 2}
   requiresSupport: 0
+  buildingId: item_pipe_t1

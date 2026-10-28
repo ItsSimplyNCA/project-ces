@@ -77,15 +77,12 @@ public class PowerStorageGUI : MonoBehaviour {
     }
 
     private void RefreshStatus() {
-        string transferLimit = float.IsPositiveInfinity(storage.TransferLimitMW) ? "Unlimited" : $"{storage.TransferLimitMW:0.##} MW/s";
-
         powerStorageStatusText.text =
             $"Tier: {storage.Tier}\n" +
             $"Stored: {storage.StoredPowerMW:0.##} / {storage.CapacityMW:0.##} MW\n" +
             $"Charge: {storage.ChargeRatio:P1}\n" +
             $"Input: {storage.InputRateMW:0.##} MW/s\n" +
             $"Output: {storage.OutputRateMW:0.##} MW/s\n" +
-            $"Net Production: {storage.NetRateMW:+0.##;-0.##;0} MW/s\n" +
-            $"Transfer limit: {transferLimit}";
+            $"Net Production: {storage.NetRateMW:+0.##;-0.##;0} MW/s\n";
     }
 }

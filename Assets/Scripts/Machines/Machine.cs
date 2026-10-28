@@ -78,6 +78,7 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
     }
 
     public void Update() {
+        if (Time.deltaTime <= 0f) return;
         if (!isOn) return;
         if (activeRecipe == null && !TryStartCrafting()) return;
 

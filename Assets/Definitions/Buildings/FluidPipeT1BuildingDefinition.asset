@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 1, z: 1}
   item: {fileID: 11400000, guid: 534ee49662b183e45a06b8e30438bfb1, type: 2}
   requiresSupport: 0
+  buildingId: fluid_pipe_t1

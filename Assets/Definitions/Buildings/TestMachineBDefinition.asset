@@ -15,3 +15,5 @@ MonoBehaviour:
   prefab: {fileID: 7320422859796807001, guid: 92a7c8eb6e8fd89408758115e0170678, type: 3}
   size: {x: 1, y: 1, z: 1}
   item: {fileID: 11400000, guid: cb7211f6f3d3f154999d2dc9fab3d787, type: 2}
+  requiresSupport: 1
+  buildingId: test_machine_b

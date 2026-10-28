@@ -67,6 +67,7 @@ public class Workbench : MonoBehaviour{
     }
 
     private void Update() {
+        if (Time.deltaTime <= 0f) return;
         if (playerInventory == null) return;
 
         if (activeRecipe == null) {

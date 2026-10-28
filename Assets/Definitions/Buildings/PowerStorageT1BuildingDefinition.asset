@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 2, z: 1}
   item: {fileID: 11400000, guid: 26cde8263e952c34d85841b3d7719a4a, type: 2}
   requiresSupport: 1
+  buildingId: power_storage_t1

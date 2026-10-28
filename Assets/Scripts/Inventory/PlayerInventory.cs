@@ -394,4 +394,132 @@ public class PlayerInventory : MonoBehaviour {
 
         return true;
     }
+
+    public InventorySaveData CaptureSaveData() {
+        InventorySaveData data = new InventorySaveData {
+            slotCount = slots.Length
+        };
+
+        foreach (InventorySlot slot in slots) {
+            InventorySlotSaveData slotData = new();
+
+            if (!slot.IsEmpty) {
+                slotData.itemId = slot.Item.ItemId;
+                slotData.amount = slot.Amount;
+
+                FluidCellData cell = slot.FluidCell;
+
+                if (cell != null) {
+                    slotData.fluidId = cell.Fluid != null ? cell.Fluid.FluidId : string.Empty;
+                }
+            }
+
+            data.slots.Add(slotData);
+        }
+
+        return data;
+    }
+
+    public bool TryRestoreSaveData(InventorySaveData data, GameDefinitionCatalog catalog) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Inventory load failed: {message}", this);
+            return false;
+        }
+
+        if (data == null || data.slots == null) {
+            return Fail("Missing inventory data.");
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            return Fail("Invalid definition catalog.");
+        }
+
+        if (data.slotCount != slots.Length || data.slots.Count != data.slotCount) {
+            return Fail("Inventory slot count does not match.");
+        }
+
+        InventorySlot[] restoredSlots = new InventorySlot[data.slotCount];
+
+        for (int i = 0; i < restoredSlots.Length; i++) {
+            InventorySlotSaveData slotData = data.slots[i];
+
+            if (slotData == null) {
+                return Fail($"Missing data for slot {i + 1}.");
+            }
+
+            if (float.IsNaN(slotData.fluidAmount) || float.IsInfinity(slotData.fluidAmount) || slotData.fluidAmount < 0f) {
+                return Fail($"Invalid fluid amount in slot {i + 1}.");
+            }
+
+            InventorySlot restoredSlot = new();
+            restoredSlots[i] = restoredSlot;
+
+            bool hasFluidId = !string.IsNullOrEmpty(slotData.fluidId);
+
+            if (string.IsNullOrEmpty(slotData.itemId)) {
+                if (slotData.amount != 0 || hasFluidId || slotData.fluidAmount != 0f) {
+                    return Fail($"Invalid empty slot {i + 1}.");
+                }
+
+                continue;
+            }
+
+            if (!catalog.TryGetItem(slotData.itemId, out ItemDefinition item)) {
+                return Fail($"Unknown item ID: {slotData.itemId}");
+            }
+
+            if (slotData.amount <= 0 || slotData.amount > item.MaxStackSize) {
+                return Fail($"Invalid item amount in slot {i + 1}.");
+            }
+
+            if (!item.IsFluidCell && (hasFluidId || slotData.fluidAmount != 0f)) {
+                return Fail($"Unexpected fluid data in slot {i + 1}.");
+            }
+
+            int addedAmount = restoredSlot.Add(item, slotData.amount);
+
+            if (addedAmount != slotData.amount) {
+                return Fail($"Could not restore slot {i + 1}.");
+            }
+
+            if (!item.IsFluidCell) continue;
+
+            if (!hasFluidId) {
+                if (slotData.fluidAmount != 0f) {
+                    return Fail($"Missing fluid ID in slot {i + 1}.");
+                }
+
+                continue;
+            }
+
+            if (!catalog.TryGetFluid(slotData.fluidId, out FluidDefinition fluid)) {
+                return Fail($"Unknown fluid ID: {slotData.fluidId}");
+            }
+
+            FluidCellData cell = restoredSlot.FluidCell;
+
+            if (slotData.fluidAmount <= 0f || slotData.fluidAmount > cell.Capacity) {
+                return Fail($"Invalid cell contents in slot {i + 1}.");
+            }
+
+            float addedFluid = cell.Add(fluid, slotData.fluidAmount);
+
+            if (addedFluid != slotData.fluidAmount) {
+                return Fail($"Could not restore cell in slot {i + 1}.");
+            }
+        }
+
+        slots = restoredSlots;
+
+        return true;
+    }
+
+    [ContextMenu("Debug/Print Inventory Save Data")]
+    private void PrintInventorySaveDataForDebug() {
+        if (!Application.isPlaying) return;
+
+        InventorySaveData data = CaptureSaveData();
+
+        Debug.Log(JsonUtility.ToJson(data, true), this);
+    }
 }

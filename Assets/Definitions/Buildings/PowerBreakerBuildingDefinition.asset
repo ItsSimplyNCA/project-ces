@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 2, z: 1}
   item: {fileID: 11400000, guid: 388357f8efacc8745b5d8cd188f52ea6, type: 2}
   requiresSupport: 1
+  buildingId: power_breaker

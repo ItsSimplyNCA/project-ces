@@ -16,3 +16,4 @@ MonoBehaviour:
   size: {x: 1, y: 1, z: 1}
   item: {fileID: 11400000, guid: eb2545be33c553a439e7f534d29fd3ba, type: 2}
   requiresSupport: 0
+  buildingId: energy_cable_t1

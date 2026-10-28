@@ -10,7 +10,6 @@ public class PowerStorage : MonoBehaviour, IDeconstructionContents {
     public float StoredPowerMW => storedPower;
     public float ChargeRatio => Mathf.Clamp01(storedPower / CapacityMW);
     public bool HasContents => storedPower > 0f;
-    public float TransferLimitMW => definition.TransferLimitEnabled ? definition.TransferLimitMW : float.PositiveInfinity;
 
     public float InputRateMW { get; private set; }
     public float OutputRateMW { get; private set; }
@@ -23,13 +22,13 @@ public class PowerStorage : MonoBehaviour, IDeconstructionContents {
     
     public float GetAvailableDischargePowerMW(float deltaTime) {
         if (deltaTime <= 0f || storedPower <= 0f) return 0f;
-        return Mathf.Min(storedPower / deltaTime, TransferLimitMW);
+        return storedPower / deltaTime;
     }
 
     public float GetAvailableChargePowerMW(float deltaTime) {
         if (deltaTime <= 0f) return 0f;
         float availableSpace = Mathf.Max(0f, CapacityMW - storedPower);
-        return Mathf.Min(availableSpace / deltaTime, TransferLimitMW);
+        return availableSpace / deltaTime;
     }
 
     public float ReceivePower(float inputRateMW, float deltaTime) {
@@ -73,6 +72,13 @@ public class PowerStorage : MonoBehaviour, IDeconstructionContents {
         storedPower = Mathf.Max(0f, storedPower - removedPower);
 
         return removedPower;
+    }
+
+    public void RecordTransitPower(float rateMW) {
+        if (rateMW <= 0f) return;
+
+        InputRateMW += rateMW;
+        OutputRateMW += rateMW;
     }
 
     [ContextMenu("Debug/Fill Power Storage")]
