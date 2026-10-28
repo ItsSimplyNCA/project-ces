@@ -12,7 +12,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2b49136790320044b5dc62d84003e24, type: 3}
   m_Name: GameDefinitionCatalog
   m_EditorClassIdentifier: Assembly-CSharp::GameDefinitionCatalog
-  items: []
-  fluids: []
-  recipes: []
-  buildings: []
+  items:
+  - {fileID: 11400000, guid: eb2545be33c553a439e7f534d29fd3ba, type: 2}
+  - {fileID: 11400000, guid: 66bfad68c1fd1234da351a2a27725803, type: 2}
+  - {fileID: 11400000, guid: 534ee49662b183e45a06b8e30438bfb1, type: 2}
+  - {fileID: 11400000, guid: 24867d4e8da4ea048b5b667145256775, type: 2}
+  - {fileID: 11400000, guid: 9a7b5ff397298504390a6e115fdf409b, type: 2}
+  - {fileID: 11400000, guid: eb6fb366f56074c49a49a7d45bc85259, type: 2}
+  - {fileID: 11400000, guid: 8a40c8800ee7bb14e856dca32192d1a6, type: 2}
+  - {fileID: 11400000, guid: 41e0d273019605444805ff854dbf7cf6, type: 2}
+  - {fileID: 11400000, guid: 388357f8efacc8745b5d8cd188f52ea6, type: 2}
+  - {fileID: 11400000, guid: 26cde8263e952c34d85841b3d7719a4a, type: 2}
+  - {fileID: 11400000, guid: 9a0b92699ca4df54c8a5c5c97d95672e, type: 2}
+  - {fileID: 11400000, guid: dffd063591bd431489e6ebb85b16b15b, type: 2}
+  - {fileID: 11400000, guid: 4c0b78f4afb81634885f553a36c533b5, type: 2}
+  - {fileID: 11400000, guid: 41611303ea0bf814390bb05abf0ca74b, type: 2}
+  - {fileID: 11400000, guid: cb7211f6f3d3f154999d2dc9fab3d787, type: 2}
+  - {fileID: 11400000, guid: a4a9ef46423a32940bc2a15287aa6459, type: 2}
+  - {fileID: 11400000, guid: 6771f4df0c173fd4499e28d344bfa094, type: 2}
+  - {fileID: 11400000, guid: de1ce4e73649a224985b0cfcfc770f72, type: 2}
+  fluids:
+  - {fileID: 11400000, guid: a46ddc5035bc0534380ee4d137d6a7aa, type: 2}
+  - {fileID: 11400000, guid: 45ada79dfd41412459e6d6e1fe647a22, type: 2}
+  recipes:
+  - {fileID: 11400000, guid: 32b3fbc2658421b4cb517aa83770d859, type: 2}
+  - {fileID: 11400000, guid: fd898890c53aa284f89550248f47ed5c, type: 2}
+  - {fileID: 11400000, guid: 48b2835ae73776e4dad5411b04971894, type: 2}
+  - {fileID: 11400000, guid: 0ffeb1bc4d0227446aea6e4e76d3e763, type: 2}
+  - {fileID: 11400000, guid: 19800d5ab8708864ea4dc42d7709fe3a, type: 2}
+  buildings:
+  - {fileID: 11400000, guid: 43a73e86e9636e24992f061b32dcd94d, type: 2}
+  - {fileID: 11400000, guid: b57850a438d9044469708b053e447472, type: 2}
+  - {fileID: 11400000, guid: d772dfbd8fe80cb4a84d0d3769acf710, type: 2}
+  - {fileID: 11400000, guid: 980d06fed0700ab458990f52469a7e40, type: 2}
+  - {fileID: 11400000, guid: 301a35d473b4b424c8a9b2d824805b90, type: 2}
+  - {fileID: 11400000, guid: e51d738c5e5b8484b913e1a5d34570db, type: 2}
+  - {fileID: 11400000, guid: 40cbb5ba2ffb72e439b3355db6e1516a, type: 2}
+  - {fileID: 11400000, guid: ec5ec845abac4d2469e24b1c7b58e0d9, type: 2}
+  - {fileID: 11400000, guid: 9d82d2d548ae33542844fec89383d19d, type: 2}
+  - {fileID: 11400000, guid: 1a6a4ef71d55af4448f00aaecb08325f, type: 2}
+  - {fileID: 11400000, guid: d48ac6148a4e73e42aa9ec3fe66d42d0, type: 2}
+  - {fileID: 11400000, guid: 14b71fe41787ee342be9ae478f65beef, type: 2}
+  - {fileID: 11400000, guid: 2217d013f06da53498aa037fcdf1197e, type: 2}
+  - {fileID: 11400000, guid: 9d7ec2fc4b2258a49bf5a8130a3c4e1e, type: 2}
