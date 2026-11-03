@@ -9,6 +9,8 @@ public class PlayerLook : MonoBehaviour {
 
     private float pitch;
 
+    public float Pitch => pitch;
+
     private void OnEnable() {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -36,6 +38,11 @@ public class PlayerLook : MonoBehaviour {
         pitch = Mathf.Clamp(pitch, -pitchLimit, pitchLimit);
 
         transform.Rotate(Vector3.up, yawDelta, Space.Self);
+        cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+    }
+
+    public void RestorePitch(float savedPitch) {
+        pitch = Mathf.Clamp(savedPitch, -pitchLimit, pitchLimit);
         cameraTransform.localRotation = Quaternion.Euler(pitch, 0f, 0f);
     }
 }

@@ -2,7 +2,7 @@
 
 ## 1. Dokumentum és core vision
 
-A Unity factory-game aktuális projektkontextusa, a rendelkezésre álló korai beszélgetés és az ebben a chatben megerősített döntések alapján. A legutóbbi döntések az irányadók. Ez design, nem implementációs állapotjelentés. Példaszámok nem végleges balance-értékek. **TBD / Future Design** pontokhoz ne találjunk ki végleges szabályokat.
+A Unity factory-game aktuális projektkontextusa, a rendelkezésre álló korai beszélgetés és az ebben a chatben megerősített döntések alapján. A legutóbbi döntések az irányadók. Az 1–11. fejezet a design specifikációja; a 12. fejezet külön dátumozott fejlesztési állapotjelentés, amely nem írja felül a design szabályait. Példaszámok nem végleges balance-értékek. **TBD / Future Design** pontokhoz ne találjunk ki végleges szabályokat.
 
 Önálló 3D factory-game, mély anyagfeldolgozással, gyártási láncokkal és technológiai fejlődéssel. A workbench korlátai tudatosan ösztönzik a korai gépi automatizálást.
 
@@ -33,7 +33,7 @@ A gépek fix, egyben lerakható egységek. Több gridcellát foglalhatnak, de ne
 - Aktív és következő ciklusra kiválasztott recept külön állapot.
 - GUI ON/OFF csak craftingot állít le; input/output logisztika tovább működik.
 
-Magasabb tier gyorsítja az alacsonyabb tierű recepteket, jelenleg változatlan MW-igénnyel. Emiatt a ciklus összenergiája csökken. Időszorzók későbbi balance-értékek. Energia-szorzó fejlesztői konfigurációban később változtatható, jelenleg 1.
+Magasabb tier gyorsítja az alacsonyabb tierű recepteket, jelenleg változatlan MW/s-igénnyel. Emiatt a ciklus összenergiája csökken. Időszorzók későbbi balance-értékek. Energia-szorzó fejlesztői konfigurációban később változtatható, jelenleg 1.
 
 ### Bufferek
 
@@ -110,27 +110,27 @@ Fluid Cell újrahasználható item, **maximum 1 L**, egy fluidtípussal, részle
 
 ## 6. Power
 
-Egységes elektromosság, nincs LV/MV/HV hálózat. Tierelt földkábelek és explicit Energy Input/Output portok, légkábel félretéve. Fogyasztó Inputot, termelő Outputot igényel; Power Storage/breaker mindkettőt. Alátámasztás nem áramforrás. Teljesítmény MW, nem MW/s; tárolt energia külön mennyiség.
+Egységes elektromosság, nincs LV/MV/HV hálózat. Tierelt földkábelek és explicit Energy Input/Output portok, légkábel félretéve. Fogyasztó Inputot, termelő Outputot igényel; Power Storage/breaker mindkettőt. Alátámasztás nem áramforrás. Tudatosan egyszerűsített játékbeli energiaszámláló: a tárolt készlet kijelzése **MW**, az input/output és a termelési/fogyasztási ráta **MW/s**. Készletváltozás: `(input − output) × deltaTime`. Ez játékbeli jelölés, nem fizikai mértékegységmodell. Az alábbi átviteli és igénypéldák MW/s értékek.
 
 ### Fogyasztók és generátorok
 
-Gép csak aktív craftingkor fogyaszt. Kábelkorlát lassít: 10 MW igényű gép 5 MW-tal 50%-os, 10 s helyett 20 s ciklus. Közös kábel fogyasztói egyenlően osztoznak, nem használt rész újraosztható: 10 MW-on 10+10 igényből 5+5, 2+10 igényből 2+8.
+Gép csak aktív craftingkor fogyaszt. Kábelkorlát lassít: 10 MW/s igényű gép 5 MW/s ellátással 50%-os, 10 s helyett 20 s ciklus. Közös kábel fogyasztói egyenlően osztoznak, nem használt rész újraosztható: 10 MW/s-on 10+10 igényből 5+5, 2+10 igényből 2+8.
 
 Generátor ON működésben mindig maximumon termel/fuelt fogyaszt, igénytől függetlenül. GUI ON/OFF, OFF-ban nulla termelés/fuel, input tölthető. Kompatibilis fuel automatikusan fogadható recept nélkül, felhasználás inputslot-sorrendben. Fuelhiány után automatikus restart; kézi OFF/túlterhelés után nem.
 
 ### Power Storage
 
-Külön machine, generatorban nincs beépítve. Tierfüggő kapacitás, saját transfer limit alapból nincs; később konfigurálhatóan bekapcsolható/állítható. Kábelkorlát és véges készlet érvényes. Nincs ON/OFF. Inputon tölt, Outputon energiát ad, egyszerre is.
+Külön machine, generatorban nincs beépítve. Tierfüggő kapacitás, saját transfer limit nincs, és nem marad későbbi konfigurálható funkcióként sem. Import/export sebességét az útvonal kábelkapacitása korlátozza; a belső készletbe töltést a szabad hely, a készletből kisütést az elérhető mennyiség is korlátozza. Kábelkorlát és véges készlet érvényes. Nincs ON/OFF. Inputon tölt, Outputon energiát ad, egyszerre is.
 
-Párhuzamos két Storage külön 10 MW kábelekkel közös pontra, majd 10 MW gyári kivezetés: 5–5 MW. Soros A → B → gyár esetén A 10 MW-tal tölti B-t, B saját készletéből 10 MW-ot ad a gyárnak, nettó készlete változatlan. A kiürülve B tovább ad, saját készlete fogy.
+Párhuzamos két Storage külön 10 MW/s kábelekkel közös pontra, majd 10 MW/s gyári kivezetés: 5–5 MW/s. Soros A → B → gyár esetén A 10 MW/s rátával táplálja B-t, B ugyanennyit továbbít a gyárnak, nettó készlete változatlan. A köztes tároló üresen és tele is továbbíthat energiát, megfelelő Input/Output bekötéssel. Az átfolyás beleszámít az input/output statisztikába, önmagában nem változtatja a belső készletet. A kiürülve B tovább ad, saját készlete fogy.
 
 Többletből tölt, hiánynál besegít breaker trip előtt.
 
 ### Breaker és overload
 
-**2×1×2 machine**, két blokk magas. Energy Input/Output, kézi kapcsoló, ON/OFF/TRIPPED. Nem tierfüggő, saját transfer limit nincs.
+**2×1×2 machine**, két blokk magas. Energy Input/Output, egyetlen kézi kapcsológomb. Túlterheléskor OFF/Open állapot és külön `Tripped: Overload` jelzés; nincs külön Reset/Restart gomb. Nem tierfüggő, saját transfer limit nincs.
 
-Termelés/storage ellátást meghaladó fogyasztásnál a géptől következő breaker leold, mögötti egész ág leáll. Generátor felőli rész működhet. Player helyszínen visszakapcsol; fennálló overloadnál azonnal újra trip.
+Termelés/storage ellátást meghaladó fogyasztásnál a géptől következő breaker leold, mögötti egész ág leáll. Generátor felőli rész működhet. Player helyszínen ugyanazzal a kapcsológombbal visszakapcsol; ez törli a trip jelzést. Fennálló overloadnál azonnal újra trip. A generátor is egyetlen kapcsológombot használ, külön Restart nélkül.
 
 Breaker nélkül a hálózat generátorai leállnak, egyenként kézzel újraindítandók. Elégtelen első generátor ismét leáll: előbb csökkenteni kell az igényt.
 
@@ -170,6 +170,16 @@ Inventory slot/stack alapú, nincs súlykorlát, fejlesztéssel növelhető slot
 ## 8. Digital Era
 
 AE2 ihlette digitális storage és valódi machine-eket használó autocrafting irány. Korai ötletek: controller, modules, terminal, data cables, storage interfaces, import/export, production patterns/planner. Nem végleges lista/balance. V1/v2 határok game balance során dőlnek el. Chest automatizálhatatlansága külön döntés nélkül nem oldható fel.
+
+### Opcionális programozható gyárvezérlés
+
+Elfogadott opcionális irány (2026-11-03): ComputerCraft ihlette programozhatóság az egyedi, AE2-alapú Digital Era rendszerbe integrálva. Nem különálló ComputerCraft-másolat vagy annak teljes funkciókészlete: a meglévő digitális hálózat, terminálok és autocrafting képességeire épülő vezérlési réteg.
+
+A programozás opcionális: a fő fejlődési út és az alapvető automatizálás programírás nélkül is használható marad. Lehetséges felhasználások a hálózati készletek és gépállapotok lekérdezése, saját monitoring/kijelzések, feltételes gyártási kérések és gépvezérlés. Ezek tervezési lehetőségek, nem végleges API- vagy eszközlista.
+
+Az integráció a valódi gépekkel végzett autocraftingra épül; az anyagmozgatás, recept-, energia- és útvonalkorlátok továbbra is érvényesek. A Data portok és a digitális hálózat pontos kapcsolata még tervezendő. Programozható robotok vagy a ComputerCraft más funkciói e döntéssel nem kerülnek automatikusan a scope-ba.
+
+**TBD / Future Design:** programozási felület és nyelv, elérhető adatok/parancsok, hozzáférés és unlock, controller/module/terminal szerepek, autocrafting-integráció, események és ütemezés, futási erőforráskorlátok, hibakeresés, programok és futási állapot mentése; Digital Era v1/v2 besorolás.
 
 **TBD / Future Design:** detailed Digital Era/autocrafting specifics, power, memory/bandwidth/channel, scheduling, stock keeping és monitoring.
 
@@ -223,4 +233,68 @@ Első prototípus: kis, véges dombos tesztterület; ásás, feltöltés, egyeng
 
 ## 11. Codex implementációs alapelvek
 
-Aktuális döntések felülírják az inspirációk és korai javaslatok szabályait. UI, adatmodell és simulation különüljön el. TBD érték ne váljon észrevétlenül végleges designná. Save/load és új lerakás eltérő életciklus. Balance-szorzók, opcionális storage limit és későbbi contention policy konfigurálhatók legyenek. Nincs fizikai itemutazás, RNG output, automatikus pipe-kapcsolódás vagy blokkonkénti multiblock. Későbbi multiplayer/survival miatt most nem szükséges ezek infrastruktúráját építeni.
+Aktuális döntések felülírják az inspirációk és korai javaslatok szabályait. UI, adatmodell és simulation különüljön el. TBD érték ne váljon észrevétlenül végleges designná. Save/load és új lerakás eltérő életciklus. Balance-szorzók és későbbi contention policy konfigurálhatók legyenek. Power Storage saját transfer limitet ne vezessünk be. Nincs fizikai itemutazás, RNG output, automatikus pipe-kapcsolódás vagy blokkonkénti multiblock. Későbbi multiplayer/survival miatt most nem szükséges ezek infrastruktúráját építeni.
+
+## 12. Fejlesztési állapot és hátralévő munka — 2026-11-03
+
+### Forrás és ellenőrzési korlát
+
+Coding Cody összefoglalója a Designer Danyval történt egyeztetéshez, a jelenlegi repó és saját fejlesztési előzményei alapján. Forráschat: `01a0fc74-a92f-7691-a13f-e799369cc6af`, összefoglaló turn: `01a1a08d-ad3c-7821-a140-bcb9b96952a7`. Projekt: `H:/git-repo-for-unity/project-ces`, Unity 6000.3.11f1, URP, új Input System.
+
+Ez fájlalapú állapotfelmérés: Cody most nem indított Play módot és nem futtatott teljes tesztkészletet. A kódban meglévő működés nem jelent teljes runtime-validációt. Az Obsidian vault 2026-10-12-i auditját és feladatstátuszait ez az egyeztetés nem frissítette.
+
+A 6. fejezetbe átvezetett energia-döntések Cody által jelzett korábbi kifejezett felhasználói döntések. Az alábbi implementációs eltérések önmagukban nem új design-döntések.
+
+### Kódban meglévő prototípusrendszerek
+
+- Player: mozgás, kameranézés, ugrás, célkereszt.
+- Building: gridfoglalás, fix többcellás prefabok, forgatás, előnézet, inventoryból lerakás, nyomva tartott bontás és veszteségmegerősítések, teljes gridméretű kijelölés.
+- Inventory: slotok, stackek, kezdőitemek, egyedi Fluid Cell-tartalom és állapotmegőrző átviteli metódusok.
+- Machine: aktív/kiválasztott recept, egy folyamat, induláskori inputlevonás, outputhely-ellenőrzés, progressmegőrzés, ON/OFF, tierkompatibilitás és gyorsítás; fluidbufferek és cellás kezelés.
+- Universal I/O: Layer 0 portok, portmódok, külön kapcsolati engedélyek.
+- Item/fluid logisztika: gráfos átvitel, közös szakaszkapacitás, alternatív utak, Nearest/Round Robin és outputbejárási kurzorok; pipe/kábel kapcsolati vizualizáció.
+- Silo/Tank: egy anyagtípus, kapacitás, type lock, GUI, kézi és hálózati kezelés.
+- Workbench: időzített folyamat player inventoryból, cancelkor visszaadás, GUI-bezáráskor megszakítás; a teljes zárolás és bontásvédelem még auditálandó.
+- Energia: tesztgenerátor, kábelkapacitások, részleges ellátás és lassulás, breaker/túlterhelési prototípus, Power Storage töltés/kisütés/tárolóközi átvitel/átfolyás és statisztika.
+- Pause: Escape/Resume, timeScale-alapú szünet. Energiaoldalon komponens-, hálózat-, végpont- és útvonalcache topológiaváltozási érvénytelenítéssel.
+
+Az item/fluid hálózatok jelenleg másodperces központi tickekkel futnak. A fluidelosztás 0.25 L-es, az energiaelosztás 0.25-ös adagokat használ. Ezek implementációs paraméterek, nem végleges balance-döntések. A gépek és a Workbench saját Update-ben dolgoznak, az energiaelosztás képkockánként fut; a 9. fejezet központi szimulációs célja még nem teljesült.
+
+### Korábbi runtime-visszajelzések
+
+Cody előzményeiben kifejezetten visszaigazolt több inventory-, gép-GUI- és craftingjavítás, a pipe-kapcsolatok vizualizációja és a machine fluid output → pipe → Tank Steam-átvitel javítása. A helyreállított projekt elindulását is visszajelezte a felhasználó. Ezek nem teljes regressziós ellenőrzések.
+
+Az energia-, breaker-, soros/párhuzamos tároló-, pause- és cache-edge case-ek teljes igazolása még hátravan; az egyszerű „ok” válasz nem elegendő minden teszteset sikerének megállapításához.
+
+### Mentés: meglévő alap és hiányok
+
+Megvan a típusazonosítás, a definíciókatalógus és lookup/ID-ellenőrzés, az inventory capture/validált restore Fluid Cell-adatokkal és üres slotokkal, valamint debug JSON-kiírás. A restore csak teljes siker után cseréli le az inventoryt. A katalógus Cody ellenőrzésekor 18 item-, 2 fluid-, 5 recipe- és 14 buildingreferenciát tartalmazott; a vizsgált bejegyzéseknél nem talált üres vagy ismétlődő ID-t. Playerpozíció/forgatás adatmezők már vannak, tényleges bekötésük nincs kész.
+
+Forrásfájlok: `Assets/Scripts/Saving/GameSaveData.cs`, `Assets/Scripts/Saving/GameDefinitionCatalog.cs`, `Assets/Scripts/Inventory/PlayerInventory.cs`.
+
+**Teljes játékmentés még nincs.** Hátravan:
+
+- Inventory JSON round-trip runtime-teszt, tényleges fájlírás/olvasás, Save/Load vezérlő és felület.
+- Playerállapot, stabil objektumpéldány-ID-k és teljes világ-/épületállapot mentése és visszaállítása.
+- Machine aktív/kiválasztott recept, progress, item/fluid bufferek; portok, kapcsolatok, routingkurzorok és cserekapcsolat-memória.
+- Silo/Tank készlet és lock, generátor/breaker állapot, Power Storage készlet.
+- Biztonságos teljes betöltési tranzakció, graph/cache újraépítés, autosave; mentésverzió/migráció/backup szabályainak kidolgozása.
+
+### Design–implementáció eltérések és ellenőrzendő pontok
+
+- Itemtípusonként egy inputslot a design; a kód azonos itemet több slotba is tölthet.
+- Megerősítéses inputfluid Flush nincs azonosítva; a kód cellába visszavételt támogat.
+- A generátor tüzelőanyag nélküli tesztforrás. Fuelinventory, automatikus fuelbefogadás/égetés és fuelhiány utáni restart hiányzik.
+- A Breaker building-definíció/prefab Unity XYZ mérete `(1,2,1)`. A design 2×1×2 mérete a saját, magasságot utolsó helyre tevő konvenciójával sem ezt jelenti. A kívánt méret tisztázandó; a design nincs a prefabhoz igazítva.
+- A `GridWorld.CanRemoveBuilding()` létezik, de a vizsgált bontási útvonal nem hívja: az alátámasztás védelme nem tekinthető késznek.
+- Workbench tartalomjelzése nincs bekötve az `IDeconstructionContents` interfészbe; bontási figyelmeztetése hiányos. Teljes inventoryzárolás nem látható minden mutáló API-n.
+- Hurkolt/elágazó/több betáplálású energiahálózatokon a túlterhelési védelem kiválasztása bejárási sorrendtől függhet. A cache nem bizonyít maximális áramlást vagy teljes teljesítményoptimalizálást.
+- A globális szimuláció aktív, lerakott GameObjectekre támaszkodik. Chunkunloadtól és rendereléstől teljesen független adatmodell még nincs.
+
+### Hátralévő rendszerek és javasolt sorrend
+
+Közvetlen javasolt folytatás: inventory JSON round-trip runtime-validáció → fájlos mentési alap → teljes objektum-/gépi-/hálózati állapot és visszatöltés. Ezzel együtt rendezendők a fenti designeltérések és az energia/pause/logisztika célzott runtime-tesztjei. Ez javasolt fejlesztési sorrend, nem új felhasználói prioritásdöntés.
+
+További core munka: Chest, Lifepod és kezdő játékmenet; nyersanyagbeszerzés/bányászat; voxelterep és terepalakítás; világ- és nyersanyaggenerálás; progression/guidebook/questline/milestone-ok; anyag-, recept- és gépkínálat, balansz. A voxelvilág jelenleg designirány, implementációját Cody nem találta a scriptállományban.
+
+Későbbi vagy nyitott scope: Digital Era/autocrafting, in-world panelek, inventoryfejlesztések és teljes drag/drop UX, config copy-paste, húzásos/tömeges építés. Survival és multiplayer továbbra is jövőbeli lehetőség; hiányuk nem a jelenlegi single-player core hibája. A részletszabályok az érintett fejezetek TBD pontjai szerint maradnak nyitva.

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class GridWorld : MonoBehaviour {
@@ -249,5 +250,241 @@ public class GridWorld : MonoBehaviour {
         Vector3 machineCellCenter = position - direction * (cellSize * 0.5f);
 
         return (WorldToCell(machineCellCenter), Vector3Int.RoundToInt(direction));
+    }
+
+    public WorldSaveData CaptureWorldLayout() {
+        WorldSaveData data = new WorldSaveData{
+            cellSize = cellSize
+        };
+
+        HashSet<GameObject> capturedInstances = new();
+
+        foreach (GameObject instance in occupiedCells.Values) {
+            if (instance == null || !capturedInstances.Add(instance)) {
+                continue;
+            }
+
+            BuildingInstance building = instance.GetComponent<BuildingInstance>();
+
+            if (building == null || building.Definition == null) {
+                throw new System.InvalidOperationException("Registered building has no valid BuildingInstance.");
+            }
+
+            if (string.IsNullOrWhiteSpace(building.Definition.BuildingId)) {
+                throw new System.InvalidOperationException($"Missing building ID: {building.Definition.name}");
+            }
+
+            data.buildings.Add(CaptureBuildingData(building));
+        }
+
+        data.buildings.Sort((first, second) => {
+            int comparison = first.origin.x.CompareTo(second.origin.x);
+
+            if (comparison != 0) return comparison;
+
+            comparison = first.origin.y.CompareTo(second.origin.y);
+
+            return comparison != 0 ? comparison : first.origin.z.CompareTo(second.origin.z);
+        });
+
+        return data;
+    }
+
+    public bool ValidateWorldLayoutData(WorldSaveData data, GameDefinitionCatalog catalog) {
+        bool Fail(string message) {
+            Debug.LogWarning($"World layout validation failed: {message}", this);
+            return false;
+        }
+
+        if (data == null || data.buildings == null) {
+            return Fail("Missing world layout data.");
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            return Fail("Invalid definition catalog.");
+        }
+
+        if (float.IsNaN(data.cellSize) || float.IsInfinity(data.cellSize) || data.cellSize <= 0f || !Mathf.Approximately(data.cellSize, cellSize)) {
+            return Fail("Grid cell size does not match.");
+        }
+
+        HashSet<Vector3Int> savedOccupiedCells = new();
+
+        foreach (BuildingSaveData savedBuilding in data.buildings) {
+            if (savedBuilding == null) {
+                return Fail("Missing building entry.");
+            }
+
+            if (savedBuilding.quarterTurns < 0 || savedBuilding.quarterTurns > 3) {
+                return Fail("Invalid building rotation.");
+            }
+
+            if (!catalog.TryGetBuilding(savedBuilding.buildingId, out BuildingDefinition definition)) {
+                return Fail($"Unknown building ID: {savedBuilding.buildingId}");
+            }
+
+            if (definition.Prefab == null || definition.Prefab.GetComponent<BuildingInstance>() == null) {
+                return Fail($"Invalid building prefab: {definition.name}");
+            }
+
+            Vector3Int definitionSize = definition.Size;
+
+            if (definitionSize.x <= 0 || definitionSize.y <= 0 || definitionSize.z <= 0) {
+                return Fail($"Invalid building size: {definition.name}");
+            }
+
+            if (!ValidateBuildingConnections(savedBuilding, definition)) {
+                return false;
+            }
+
+            Vector3Int size = GetRotatedSize(definition, savedBuilding.quarterTurns);
+            Vector3Int origin = savedBuilding.origin;
+
+            if ((long)origin.x + size.x - 1 > int.MaxValue || (long)origin.y + size.y - 1 > int.MaxValue || (long)origin.z + size.z - 1 > int.MaxValue) {
+                return Fail("Building coordinates exceed the grid range.");
+            }
+
+            for (int x = 0; x < size.x; x++) {
+                for (int y = 0; y < size.y; y++) {
+                    for (int z = 0; z < size.z; z++) {
+                        Vector3Int cell = origin + new Vector3Int(x, y, z);
+
+                        if (!savedOccupiedCells.Add(cell)) {
+                            return Fail($"Overlapping buildings at cell {cell}.");
+                        }
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private BuildingSaveData CaptureBuildingData(BuildingInstance building) {
+        BuildingSaveData data = new BuildingSaveData {
+            buildingId = building.Definition.BuildingId,
+            origin = building.Origin,
+            quarterTurns = building.QuarterTurns
+        };
+
+        PipeSegment pipe = building.GetComponent<PipeSegment>();
+        EnergyCableSegment cable = building.GetComponent<EnergyCableSegment>();
+
+        if (pipe != null) {
+            data.connections = pipe.Connections;
+        } else if (cable != null) {
+            data.connections = cable.Connections;
+        }
+
+        UniversalIO universalIO = building.GetComponent<UniversalIO>();
+
+        if (universalIO != null) {
+            foreach (UniversalPort port in universalIO.Ports) {
+                data.ports.Add(new UniversalPortSaveData {
+                    localCell = port.LocalCell,
+                    face = port.Face,
+                    mode = port.Mode,
+                    connectionEnabled = port.ConnectionEnabled,
+                    outputSlotCursor = port.OutputSlotCursor,
+                    routingMode = port.RoutingMode,
+                    roundRobinDestinationCursor = port.RoundRobinDestinationCursor
+                });
+            }
+        }
+
+        return data;
+    }
+
+    private bool ValidateBuildingConnections(BuildingSaveData savedBuilding, BuildingDefinition definition) {
+        bool Fail(string message) {
+            Debug.LogWarning($"World layout validation failed: {definition.name}: {message}", this);
+            return false;
+        }
+
+        const PipeConnections VALID_CONNECTIONS =
+            PipeConnections.Left |
+            PipeConnections.Right |
+            PipeConnections.Front |
+            PipeConnections.Back |
+            PipeConnections.Top |
+            PipeConnections.Bottom;
+
+        if ((savedBuilding.connections & ~VALID_CONNECTIONS) != PipeConnections.None) {
+            return Fail("Invalid connection flags.");
+        }
+
+        bool isPipe = definition.Prefab.GetComponent<PipeSegment>() != null;
+        bool isCable = definition.Prefab.GetComponent<EnergyCableSegment>() != null;
+
+        if (isPipe && isCable) {
+            return Fail("Prefab contains both pipe and energy cable components.");
+        }
+
+        if (!isPipe && !isCable && savedBuilding.connections != PipeConnections.None) {
+            return Fail("Unexpected segment connections.");
+        }
+
+        if (savedBuilding.ports == null) {
+            return Fail("Missing port list.");
+        }
+
+        UniversalIO universalIO = definition.Prefab.GetComponent<UniversalIO>();
+
+        if (universalIO == null) {
+            return savedBuilding.ports.Count == 0 || Fail("Unexpected ports on a building without UniversalIO.");
+        }
+
+        HashSet<(Vector3Int Cell, PortFace Face)> expectedPorts = new();
+        Vector3Int size = definition.Size;
+
+        for (int x = 0; x < size.x; x++) {
+            for (int z = 0; z < size.z; z++) {
+                Vector3Int cell = new Vector3Int(x, 0, z);
+
+                expectedPorts.Add((cell, PortFace.Bottom));
+
+                if (x == 0) expectedPorts.Add((cell, PortFace.Left));
+                if (x == size.x - 1) expectedPorts.Add((cell, PortFace.Right));
+                if (z == 0) expectedPorts.Add((cell, PortFace.Back));
+                if (z == size.z - 1) expectedPorts.Add((cell, PortFace.Front));
+            }
+        }
+
+        if (savedBuilding.ports.Count != expectedPorts.Count) {
+            return Fail("Port count does not match the building.");
+        }
+
+        foreach (UniversalPortSaveData port in savedBuilding.ports) {
+            if (port == null) {
+                return Fail("Missing port entry.");
+            }
+
+            if (!expectedPorts.Remove((port.localCell, port.face))) {
+                return Fail("Invalid or duplicate port.");
+            }
+
+            if (!System.Enum.IsDefined(typeof(PortMode), port.mode)) {
+                return Fail("Invalid port mode.");
+            }
+
+            if (!System.Enum.IsDefined(typeof(ItemRoutingMode), port.routingMode)) {
+                return Fail("Invalid routing mode.");
+            }
+
+            if (port.outputSlotCursor < 0 || port.roundRobinDestinationCursor < 0) {
+                return Fail("Negative routing cursor.");
+            }
+        }
+
+        return true;
+    }
+
+    [ContextMenu("Debug/Print World Layout")]
+    private void PrintWorldLayoutForDebug() {
+        if (!Application.isPlaying) return;
+
+        WorldSaveData data = CaptureWorldLayout();
+
+        Debug.Log(JsonUtility.ToJson(data, true), this);
     }
 }

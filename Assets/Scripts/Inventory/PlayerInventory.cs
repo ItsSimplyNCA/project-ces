@@ -410,7 +410,11 @@ public class PlayerInventory : MonoBehaviour {
                 FluidCellData cell = slot.FluidCell;
 
                 if (cell != null) {
-                    slotData.fluidId = cell.Fluid != null ? cell.Fluid.FluidId : string.Empty;
+                    slotData.fluidId = cell.Fluid != null
+                        ? cell.Fluid.FluidId
+                        : string.Empty;
+
+                    slotData.fluidAmount = cell.Amount;
                 }
             }
 

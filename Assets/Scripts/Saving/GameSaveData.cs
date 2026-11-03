@@ -11,6 +11,7 @@ using UnityEngine;
 [Serializable] public class PlayerSaveData {
     public Vector3 position;
     public Quaternion rotation = Quaternion.identity;
+    public float cameraPitch;
     public InventorySaveData inventory = new();
 }
 
