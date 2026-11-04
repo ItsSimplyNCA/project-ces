@@ -239,7 +239,7 @@ Aktuális döntések felülírják az inspirációk és korai javaslatok szabál
 
 ### Forrás és ellenőrzési korlát
 
-Coding Cody összefoglalója a Designer Danyval történt egyeztetéshez, a jelenlegi repó és saját fejlesztési előzményei alapján. Forráschat: `01a0fc74-a92f-7691-a13f-e799369cc6af`, összefoglaló turn: `01a1a08d-ad3c-7821-a140-bcb9b96952a7`. Projekt: `H:/git-repo-for-unity/project-ces`, Unity 6000.3.11f1, URP, új Input System.
+Coding Cody összefoglalója a Designer Danyval történt egyeztetéshez, a jelenlegi repó és saját fejlesztési előzményei alapján. Forráschat: `01a0fc74-a92f-7691-a13f-e799369cc6af`, első összefoglaló turn: `01a1a08d-ad3c-7821-a140-bcb9b96952a7`, nap végi frissítés: `01a1a1e1-ad2c-7af1-887c-48555ddccab0`. Ellenőrzött commit: `edd9eca` (Add player save/load and world layout serialization). Projekt: `H:/git-repo-for-unity/project-ces`, Unity 6000.3.11f1, URP, új Input System.
 
 Ez fájlalapú állapotfelmérés: Cody most nem indított Play módot és nem futtatott teljes tesztkészletet. A kódban meglévő működés nem jelent teljes runtime-validációt. Az Obsidian vault 2026-10-12-i auditját és feladatstátuszait ez az egyeztetés nem frissítette.
 
@@ -266,19 +266,35 @@ Cody előzményeiben kifejezetten visszaigazolt több inventory-, gép-GUI- és 
 
 Az energia-, breaker-, soros/párhuzamos tároló-, pause- és cache-edge case-ek teljes igazolása még hátravan; az egyszerű „ok” válasz nem elegendő minden teszteset sikerének megállapításához.
 
-### Mentés: meglévő alap és hiányok
+### Mentés: nap végi állapot — 2026-11-03
 
-Megvan a típusazonosítás, a definíciókatalógus és lookup/ID-ellenőrzés, az inventory capture/validált restore Fluid Cell-adatokkal és üres slotokkal, valamint debug JSON-kiírás. A restore csak teljes siker után cseréli le az inventoryt. A katalógus Cody ellenőrzésekor 18 item-, 2 fluid-, 5 recipe- és 14 buildingreferenciát tartalmazott; a vizsgált bejegyzéseknél nem talált üres vagy ismétlődő ID-t. Playerpozíció/forgatás adatmezők már vannak, tényleges bekötésük nincs kész.
+A mai munka a meglévő mentési irány implementációját vitte előre; Cody chatjében az előző egyeztetés óta nem született új gameplay-design döntés. Az opcionális, ComputerCraft ihlette integrált Digital Era programozhatóság a 8. fejezetben rögzített jövőbeli irány, implementációja nincs.
 
-Forrásfájlok: `Assets/Scripts/Saving/GameSaveData.cs`, `Assets/Scripts/Saving/GameDefinitionCatalog.cs`, `Assets/Scripts/Inventory/PlayerInventory.cs`.
+**Kódban elkészült:**
 
-**Teljes játékmentés még nincs.** Hátravan:
+- Típusazonosítók, definíciókatalógus, lookup és ID-ellenőrzés. A korábbi auditban 18 item-, 2 fluid-, 5 recipe- és 14 buildingreferencia szerepelt.
+- Inventory capture/validált restore üres slotokkal és Fluid Cell-tartalommal; a korábban kimaradt `fluidAmount` mentése javítva. A restore csak teljes siker után cseréli le az inventoryt, jelenleg az aktuálissal azonos slotszámot követel.
+- Memóriabeli inventory JSON-pillanatkép és restore; külön `inventory-debug.json` fájlos mentés/betöltés, verzióellenőrzés, `.tmp` írás és meglévő mentésnél `.bak` backup.
+- Playerpozíció, testforgatás, kamerapitch és inventory capture/restore; véges számok és quaternion validálása, CharacterController ideiglenes kikapcsolása, pitch visszaállítása és függőleges sebesség nullázása. Külön `player-debug.json` fájlos mentési/betöltési debug útvonal.
+- Világelrendezés capture: cellaméret, épülettípus-ID, gridorigin és forgatás, többcellás épületenként egy bejegyzés, koordináták szerint rendezve.
+- Pipe/kábel kapcsolati flagjeinek és a portok helyi cellájának, face-ének, módjának, kapcsolati engedélyének és routingkurzorainak capture-je.
+- Világadat-validálás: cellaméret, ID/prefab, pozitív épületméret, forgatás, koordinátatartomány, átfedések; kapcsolati bitek, várható Layer 0 portok, hiányzó/ismétlődő portok, enumértékek és nemnegatív routingkurzorok.
+- Nem destruktív világdebug: capture, JSON-visszaolvasás, validálás és szándékosan átfedő épület elutasítását vizsgáló tesztművelet. A mentési debugkomponensek a FactoryPrototype jelenetben szerepelnek, vizsgált referenciáik be vannak kötve.
 
-- Inventory JSON round-trip runtime-teszt, tényleges fájlírás/olvasás, Save/Load vezérlő és felület.
-- Playerállapot, stabil objektumpéldány-ID-k és teljes világ-/épületállapot mentése és visszaállítása.
-- Machine aktív/kiválasztott recept, progress, item/fluid bufferek; portok, kapcsolatok, routingkurzorok és cserekapcsolat-memória.
-- Silo/Tank készlet és lock, generátor/breaker állapot, Power Storage készlet.
-- Biztonságos teljes betöltési tranzakció, graph/cache újraépítés, autosave; mentésverzió/migráció/backup szabályainak kidolgozása.
+Forrásfájlok a `Assets/Scripts/Saving/` könyvtárban: `GameSaveData.cs`, `GameDefinitionCatalog.cs`, `InventorySaveDebug.cs`, `InventoryFileSaveDebug.cs`, `PlayerSaveHandler.cs`, `PlayerFileSaveDebug.cs`, `WorldSaveData.cs`, `WorldLayoutSaveDebug.cs`; továbbá `Assets/Scripts/Inventory/PlayerInventory.cs` és `Assets/Scripts/Building/GridWorld.cs`.
+
+**Runtime-bizonyíték:** Cody megtalálta a november 3-án módosított, érvényes, `version = 1` értékű `inventory-debug.json` fájlt. Ez a fájlírás megtörténtét igazolja, a sikeres restore-t önmagában nem. A jelenlegi projektbeállításokból származtatott mentési helyen `player-debug.json` fájlt nem talált. A player fájlos round-trip és a világvalidátor negatív tesztjeinek eredményére nincs részletes felhasználói visszaigazolás. Cody most nem indított Play módot, teljes fordítást vagy tesztkészletet.
+
+**Teljes játék-/világmentés és visszatöltés még nincs.** Hátravan:
+
+- Player fájlos round-trip, inventory-visszatöltés és világvalidátor negatív tesztek egyértelmű runtime-ellenőrzése.
+- A `WorldSaveData` bekötése a jelenleg csak playeradatot tartalmazó `GameSaveData` mellé; világfájl-mentés és épületeket rekonstruáló visszatöltés.
+- Stabil objektumpéldány-ID-k és teljes világállapot; gépek kiválasztott/aktív receptje, progress, item/fluid bufferek.
+- Portok, kapcsolatok és routingkurzorok tényleges restore-ja; a helyben csere után megőrzött kapcsolati memória mentése.
+- Silo/Tank tartalom és lock; kapcsolók, generátor/breaker leoldási okok, Power Storage készlet.
+- Biztonságos teljes betöltési tranzakció, graph/cache újraépítés, normál Save/Load felület és autosave; migráció és automatikus backup-helyreállítás.
+
+**Validálási és formátumkorlátok:** a világvalidátor még nem ellenőrzi a terepi alátámasztást. Engedélyezett kapcsolathoz nem követel jelenlegi szomszédot: az ideiglenesen szomszéd nélküli megjegyzett engedély elfogadható. A routingkurzoroknál csak a nemnegativitás ellenőrzött, a restore kompatibilitáskezelése hátravan. A backup létrehozása nem jelent automatikus helyreállítást. A debugformátumok és verzióellenőrzések nem zárják le a végleges save format/migráció designját.
 
 ### Design–implementáció eltérések és ellenőrzendő pontok
 
@@ -293,7 +309,7 @@ Forrásfájlok: `Assets/Scripts/Saving/GameSaveData.cs`, `Assets/Scripts/Saving/
 
 ### Hátralévő rendszerek és javasolt sorrend
 
-Közvetlen javasolt folytatás: inventory JSON round-trip runtime-validáció → fájlos mentési alap → teljes objektum-/gépi-/hálózati állapot és visszatöltés. Ezzel együtt rendezendők a fenti designeltérések és az energia/pause/logisztika célzott runtime-tesztjei. Ez javasolt fejlesztési sorrend, nem új felhasználói prioritásdöntés.
+Közvetlen javasolt folytatás: player fájlos round-trip és világvalidátor negatív tesztek runtime-ellenőrzése → épületek belső állapotának capture/validálása és kapcsolati restore API → teljes világfájl és biztonságos visszatöltés. A jelenlegi világ lecserélését csak a belső állapotok megőrzésével kössük be, hogy a betöltés ne hozzon létre kiürített, resetelt gyárat. Ezzel együtt rendezendők a fenti designeltérések és az energia/pause/logisztika célzott runtime-tesztjei. Ez javasolt fejlesztési sorrend, nem új felhasználói prioritásdöntés.
 
 További core munka: Chest, Lifepod és kezdő játékmenet; nyersanyagbeszerzés/bányászat; voxelterep és terepalakítás; világ- és nyersanyaggenerálás; progression/guidebook/questline/milestone-ok; anyag-, recept- és gépkínálat, balansz. A voxelvilág jelenleg designirány, implementációját Cody nem találta a scriptállományban.
 
