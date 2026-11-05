@@ -27,6 +27,44 @@ public class PowerGenerator : MonoBehaviour {
         Debug.LogWarning("Generator tripped: overload", this);
     }
 
+    public PowerGeneratorSaveData CaptureSaveData() {
+        return new PowerGeneratorSaveData {
+            isOn = this.isOn,
+            isTripped = this.isTripped
+        };
+    }
+
+    public bool ValidateSaveData(PowerGeneratorSaveData data) {
+        if (data == null) {
+            Debug.LogWarning("Generator validation failed: missing data.", this);
+            return false;
+        }
+
+        if (data.isTripped && data.isOn) {
+            Debug.LogWarning("Generator validation failed: a tripped generator cannot be ON.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(PowerGeneratorSaveData data) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Generator state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(data)) {
+            return false;
+        }
+
+        isOn = data.isOn;
+        isTripped = data.isTripped;
+
+        return true;
+    }
+
+    // DEBUG METHODS
     [ContextMenu("Debug/Toggle ON-OFF")]
     private void ToggleForDebug() {
         if (!Application.isPlaying) return;

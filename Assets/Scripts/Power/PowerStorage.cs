@@ -81,6 +81,53 @@ public class PowerStorage : MonoBehaviour, IDeconstructionContents {
         OutputRateMW += rateMW;
     }
 
+    public PowerStorageSaveData CaptureSaveData() {
+        return new PowerStorageSaveData {
+            storedPower = this.storedPower
+        };
+    }
+
+    public bool ValidateSaveData(PowerStorageSaveData data) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Power storage validation failed: {message}", this);
+            return false;
+        }
+
+        if (data == null) {
+            return Fail("Missing power storage data.");
+        }
+
+        if (definition == null) {
+            return Fail("Missing power storage definition.");
+        }
+
+        if (float.IsNaN(CapacityMW) || float.IsInfinity(CapacityMW) || CapacityMW <= 0f) {
+            return Fail("Invalid storage capacity.");
+        }
+
+        if (float.IsNaN(data.storedPower) || float.IsInfinity(data.storedPower) || data.storedPower < 0f || data.storedPower > CapacityMW) {
+            return Fail("Invalid stored power amount.");
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(PowerStorageSaveData data) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Power storage state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(data)) return false;
+
+        storedPower = data.storedPower;
+
+        BeginSimulationStep();
+
+        return true;
+    }
+
+    // DEBUG METHODS
     [ContextMenu("Debug/Fill Power Storage")]
     private void FillForDebug() {
         if (!Application.isPlaying) return;

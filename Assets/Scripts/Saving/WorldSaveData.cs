@@ -14,6 +14,17 @@ using UnityEngine;
 
     public PipeConnections connections;
     public List<UniversalPortSaveData> ports = new();
+    
+    public MachineSaveData machine;
+
+    public SiloSaveData silo;
+    public TankSaveData tank;
+
+    public PowerGeneratorSaveData powerGenerator;
+    public PowerBreakerSaveData powerBreaker;
+    public PowerStorageSaveData powerStorage;
+
+    public WorkbenchSaveData workbench;
 }
 
 [Serializable] public class UniversalPortSaveData {

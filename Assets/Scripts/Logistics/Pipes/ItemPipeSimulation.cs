@@ -160,7 +160,7 @@ public class ItemPipeSimulation : MonoBehaviour {
         int slotCount = source.Storage.OutputSlotCount;
 
         for (int i = 0; i < slotCount; i++) {
-            int slotIndex = source.Port.OutputSlotCursor;
+            int slotIndex = source.Port.OutputSlotCursor % slotCount;
 
             if (source.Storage.GetOutputSlotItem(slotIndex) == null) {
                 source.Port.AdvanceOutputSlotCursor(slotCount);

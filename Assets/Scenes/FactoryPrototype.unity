@@ -36972,6 +36972,10 @@ GameObject:
   m_Component:
   - component: {fileID: 1930887190}
   - component: {fileID: 1930887189}
+  - component: {fileID: 1930887194}
+  - component: {fileID: 1930887193}
+  - component: {fileID: 1930887192}
+  - component: {fileID: 1930887191}
   m_Layer: 0
   m_Name: SaveDebug
   m_TagString: Untagged
@@ -37008,6 +37012,67 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1930887191
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930887188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 294cb943a597bf8408f7dcfe6f27fa81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PortSaveDebug
+  universalIO: {fileID: 0}
+  uiState: {fileID: 387717002}
+--- !u!114 &1930887192
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930887188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 281239f1a1c084b4fab769f9c1826b15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PowerSaveDebug
+  generator: {fileID: 0}
+  breaker: {fileID: 0}
+  storage: {fileID: 0}
+  uiState: {fileID: 387717002}
+--- !u!114 &1930887193
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930887188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 222c58338408f194f94600870df29344, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StorageSaveDebug
+  silo: {fileID: 0}
+  tank: {fileID: 0}
+  definitionCatalog: {fileID: 11400000, guid: 80af338d2d9b7304fb5cbd9217c20273, type: 2}
+  uiState: {fileID: 387717002}
+--- !u!114 &1930887194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930887188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dc874b89d674840409d3fcdcd2132c95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MachineSaveDebug
+  machine: {fileID: 0}
+  definitionCatalog: {fileID: 11400000, guid: 80af338d2d9b7304fb5cbd9217c20273, type: 2}
+  uiState: {fileID: 387717002}
 --- !u!1 &1934718702
 GameObject:
   m_ObjectHideFlags: 0

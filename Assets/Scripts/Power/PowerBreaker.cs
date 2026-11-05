@@ -38,6 +38,47 @@ public class PowerBreaker : MonoBehaviour {
         GetComponentInParent<GridWorld>()?.NotifyLogisticsChanged();
     }
 
+    public PowerBreakerSaveData CaptureSaveData() {
+        return new PowerBreakerSaveData {
+            isClosed = this.isClosed,
+            isTripped = this.isTripped
+        };
+    }
+
+    public bool ValidateSaveData(PowerBreakerSaveData data) {
+        if (data == null) {
+            Debug.LogWarning("Breaker validation failed: missing data.", this);
+            return false;
+        }
+
+        if (data.isTripped && data.isClosed) {
+            Debug.LogWarning("Breaker validation failed: a tripped breaker cannot be closed.", this);
+            return false;
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(PowerBreakerSaveData data) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Breaker state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(data)) return false;
+
+        bool wasConducting = ConductsPower;
+        isClosed = data.isClosed;
+        isTripped = data.isTripped;
+
+        if (ConductsPower != wasConducting) {
+            NotifyNetworkChanged();
+        }
+
+        return true;
+    }
+
+    // DEBUG METHODS
     [ContextMenu("Debug/Toggle Breaker")]
     private void ToggleForDebug() {
         if (!Application.isPlaying) return;

@@ -480,6 +480,398 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
         SuppliedPowerMW = Mathf.Max(0f, powerMW);
     }
 
+    public MachineSaveData CaptureSaveData() {
+        return new MachineSaveData {
+            isOn = this.isOn,
+
+            selectedRecipeId = selectedRecipe != null
+                ? selectedRecipe.RecipeId
+                : string.Empty,
+            
+            activeRecipeId = activeRecipe != null
+                ? activeRecipe.RecipeId
+                : string.Empty,
+
+            craftingElapsed = this.craftingElapsed,
+
+            inputInventory = CaptureItemSlots(inputSlots),
+            outputInventory = CaptureItemSlots(outputSlots),
+
+            fluidInputSlots = CaptureFluidSlots(fluidInputSlots),
+            fluidOutputSlots = CaptureFluidSlots(fluidOutputSlots)
+        };
+    }
+
+    private static InventorySaveData CaptureItemSlots(InventorySlot[] slots) {
+        InventorySaveData data = new() {
+            slotCount = slots.Length
+        };
+
+        foreach (InventorySlot slot in slots) {
+            InventorySlotSaveData slotData = new();
+
+            if (!slot.IsEmpty) {
+                slotData.itemId = slot.Item.ItemId;
+                slotData.amount = slot.Amount;
+
+                FluidCellData cell = slot.FluidCell;
+
+                if (cell != null) {
+                    slotData.fluidId = cell.Fluid != null
+                        ? cell.Fluid.FluidId
+                        : string.Empty;
+
+                    slotData.fluidAmount = cell.Amount;
+                }
+            }
+
+            data.slots.Add(slotData);
+        }
+
+        return data;
+    }
+
+    private static List<FluidSlotSaveData> CaptureFluidSlots(FluidSlot[] slots) {
+        List<FluidSlotSaveData> data = new(slots.Length);
+
+        foreach (FluidSlot slot in slots) {
+            data.Add(new FluidSlotSaveData {
+                fluidId = slot.Fluid != null
+                    ? slot.Fluid.FluidId
+                    : string.Empty,
+                
+                amount = slot.Amount
+            });
+        }
+
+        return data;
+    }
+
+    public bool ValidateCraftingSaveData(MachineSaveData data, GameDefinitionCatalog catalog) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Machine crafting validation failed: {message}", this);
+            return false;
+        }
+
+        if (data == null) {
+            return Fail("Missing machine data.");
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            return Fail("Invalid definition catalog.");
+        }
+
+        if (float.IsNaN(data.craftingElapsed) || float.IsInfinity(data.craftingElapsed) || data.craftingElapsed < 0f) {
+            return Fail("Invalid crafting elapsed time.");
+        }
+
+        if (!string.IsNullOrEmpty(data.selectedRecipeId)) {
+            if (!catalog.TryGetRecipe(data.selectedRecipeId, out RecipeDefinition savedSelectedRecipe)) {
+                return Fail($"Unknown selected recipe: {data.selectedRecipeId}");
+            }
+
+            if (!SupportsRecipe(savedSelectedRecipe)) {
+                return Fail($"Unsupported selected recipe: {data.selectedRecipeId}");
+            }
+        }
+
+        if (string.IsNullOrEmpty(data.activeRecipeId)) {
+            if (data.craftingElapsed != 0f) {
+                return Fail("Crafting progress exists without an active recipe.");
+            }
+
+            return true;
+        }
+
+        if (!catalog.TryGetRecipe(data.activeRecipeId, out RecipeDefinition savedActiveRecipe)) {
+            return Fail($"Unknown active recipe: {data.activeRecipeId}");
+        }
+
+        if (!SupportsRecipe(savedActiveRecipe)) {
+            return Fail($"Unsupported active recipe: {data.activeRecipeId}");
+        }
+
+        float duration = savedActiveRecipe.Duration;
+
+        if (float.IsNaN(duration) || float.IsInfinity(duration) || duration <= 0f) {
+            return Fail("Active crafting progress reaches or exceeds completion.");
+        }
+
+        return true;
+    }
+
+    public bool ValidateFluidSaveData(MachineSaveData data, GameDefinitionCatalog catalog) {
+        if (data == null) {
+            Debug.LogWarning("Machine fluid validation failed: missing machine data.", this);
+            return false;
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            Debug.LogWarning("Machine fluid validation failed: invalid definition catalog.", this);
+            return false;
+        }
+
+        if (float.IsNaN(fluidSlotCapacity) || float.IsInfinity(fluidSlotCapacity) || fluidSlotCapacity <= 0f) {
+            Debug.LogWarning("Machine fluid validation failed: invalid slot capacity", this);
+            return false;
+        }
+
+        return ValidateFluidSlotData(data.fluidInputSlots, fluidInputSlotCount, catalog, "input")
+            && ValidateFluidSlotData(data.fluidOutputSlots, fluidOutputSlotCount, catalog, "output");
+    }
+
+    private bool ValidateFluidSlotData(List<FluidSlotSaveData> slots, int expectedCount, GameDefinitionCatalog catalog, string slotGroup) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Machine fluid validation failed ({slotGroup}): {message}", this);
+            return false;
+        }
+
+        if (expectedCount < 0) {
+            return Fail("Invalid configured slot count.");
+        }
+
+        if (slots == null || slots.Count != expectedCount) {
+            return Fail("Slot count does not match");
+        }
+
+        for (int i = 0; i < slots.Count; i++) {
+            FluidSlotSaveData slot = slots[i];
+
+            if (slot == null) {
+                return Fail($"Missing slot data at index {i}.");
+            }
+
+            if (float.IsNaN(slot.amount) || float.IsInfinity(slot.amount) || slot.amount < 0f || slot.amount > fluidSlotCapacity) {
+                return Fail($"Invalid fluid amount at index {i}.");
+            }
+
+            if (string.IsNullOrEmpty(slot.fluidId)) {
+                if (slot.amount != 0f) {
+                    return Fail($"Fluid amount exists without a fluid ID at index {i}.");
+                }
+
+                continue;
+            }
+
+            if (!catalog.TryGetFluid(slot.fluidId, out _)) {
+                return Fail($"Unknown fluid ID at index {i}: {slot.fluidId}");
+            }
+
+            if (slot.amount <= 0f) {
+                return Fail($"Fluid ID exists without a positive amount at index {i}.");
+            }
+        }
+
+        return true;
+    }
+    
+    public bool ValidateItemSaveData(MachineSaveData data, GameDefinitionCatalog catalog) {
+        if (data == null) {
+            Debug.LogWarning("Machine item validation failed: missing machine data.", this);
+            return false;
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            Debug.LogWarning("Machine item validation failed: invalid definition catalog.", this);
+            return false;
+        }
+
+        return ValidateItemSlotData(data.inputInventory, inputSlotCount, catalog, "input")
+            && ValidateItemSlotData(data.outputInventory, outputSlotCount, catalog, "output");
+    }
+
+    private bool ValidateItemSlotData(InventorySaveData data, int expectedCount, GameDefinitionCatalog catalog, string slotGroup) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Machine item validation failed ({slotGroup}): {message}", this);
+            return false;
+        }
+
+        if (expectedCount < 1) {
+            return Fail("Invalid configured slot count.");
+        }
+
+        if (data == null || data.slots == null) {
+            return Fail("Missing inventory data.");
+        }
+
+        if (data.slotCount != expectedCount || data.slots.Count != expectedCount) {
+            return Fail("Slot count does not match.");
+        }
+
+        for (int i = 0; i < data.slots.Count; i++) {
+            InventorySlotSaveData slot = data.slots[i];
+
+            if (slot == null) {
+                return Fail($"Missing slot data at index {i}.");
+            }
+
+            if (float.IsNaN(slot.fluidAmount) || float.IsInfinity(slot.fluidAmount) || slot.fluidAmount < 0f) {
+                return Fail($"Invalid fluid amount at index {i}.");
+            }
+
+            bool hasFluidId = !string.IsNullOrEmpty(slot.fluidId);
+
+            if (string.IsNullOrEmpty(slot.itemId)) {
+                if (slot.amount != 0 || hasFluidId || slot.fluidAmount != 0f) {
+                    return Fail($"Invalid empty slot at index {i}.");
+                }
+
+                continue;
+            }
+
+            if (!catalog.TryGetItem(slot.itemId, out ItemDefinition item)) {
+                return Fail($"Unknown item ID at index {i}: {slot.itemId}");
+            }
+
+            if (slot.amount <= 0 || slot.amount > item.MaxStackSize) {
+                return Fail($"Invalid item amount at index {i}.");
+            }
+
+            if (!item.IsFluidCell) {
+                if (hasFluidId || slot.fluidAmount != 0f) {
+                    return Fail($"Unexpected fluid data on a regular item at index {i}.");
+                }
+
+                continue;
+            }
+
+            if (!hasFluidId) {
+                if (slot.fluidAmount != 0f) {
+                    return Fail($"Cell contents exist without a fluid ID at index {i}.");
+                }
+
+                continue;
+            }
+
+            if (!catalog.TryGetFluid(slot.fluidId, out _)) {
+                return Fail($"Unknown fluid ID at index {i}: {slot.fluidId}");
+            }
+
+            float cellCapacity = new FluidCellData().Capacity;
+
+            if (slot.fluidAmount <= 0f || slot.fluidAmount > cellCapacity) {
+                return Fail($"Invalid cell contents at index {i}.");
+            }
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(MachineSaveData data, GameDefinitionCatalog catalog) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Machine state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(data, catalog)) {
+            return false;
+        }
+
+        InventorySlot[] restoredInputs = RestoreValidatedItemSlots(data.inputInventory, catalog);
+        InventorySlot[] restoredOutputs = RestoreValidatedItemSlots(data.outputInventory, catalog);
+        
+        FluidSlot[] restoredFluidInputs = RestoreValidatedFluidSlots(data.fluidInputSlots, catalog);
+        FluidSlot[] restoredFluidOutputs = RestoreValidatedFluidSlots(data.fluidOutputSlots, catalog);
+
+        RecipeDefinition restoredSelectedRecipe = null;
+        RecipeDefinition restoredActiveRecipe = null;
+
+        if (!string.IsNullOrEmpty(data.selectedRecipeId)) {
+            catalog.TryGetRecipe(data.selectedRecipeId, out restoredSelectedRecipe);
+        }
+
+        if (!string.IsNullOrEmpty(data.activeRecipeId)) {
+            catalog.TryGetRecipe(data.activeRecipeId, out restoredActiveRecipe);
+        }
+
+        inputSlots = restoredInputs;
+        outputSlots = restoredOutputs;
+        fluidInputSlots = restoredFluidInputs;
+        fluidOutputSlots = restoredFluidOutputs;
+
+        selectedRecipe = restoredSelectedRecipe;
+        activeRecipe = restoredActiveRecipe;
+        craftingElapsed = data.craftingElapsed;
+        isOn = data.isOn;
+
+        SuppliedPowerMW = 0f;
+
+        return true;
+    }
+
+    private static InventorySlot[] RestoreValidatedItemSlots(InventorySaveData data, GameDefinitionCatalog catalog) {
+        InventorySlot[] restoredSlots = CreateSlots(data.slotCount);
+
+        for (int i = 0; i < restoredSlots.Length; i++) {
+            InventorySlotSaveData savedSlot = data.slots[i];
+
+            if (string.IsNullOrEmpty(savedSlot.itemId)) continue;
+
+            catalog.TryGetItem(savedSlot.itemId, out ItemDefinition item);
+
+            InventorySlot restoredSlot = restoredSlots[i];
+            restoredSlot.Add(item, savedSlot.amount);
+
+            if (item.IsFluidCell && !string.IsNullOrEmpty(savedSlot.fluidId)) {
+                catalog.TryGetFluid(savedSlot.fluidId, out FluidDefinition fluid);
+                restoredSlot.FluidCell.Add(fluid, savedSlot.fluidAmount);
+            }
+        }
+
+        return restoredSlots;
+    }
+
+    private FluidSlot[] RestoreValidatedFluidSlots(List<FluidSlotSaveData> data, GameDefinitionCatalog catalog) {
+        FluidSlot[] restoredSlots = CreateFluidSlots(data.Count, fluidSlotCapacity);
+
+        for (int i = 0; i < restoredSlots.Length; i++) {
+            FluidSlotSaveData savedSlot = data[i];
+
+            if (string.IsNullOrEmpty(savedSlot.fluidId)) continue;
+
+            catalog.TryGetFluid(savedSlot.fluidId, out FluidDefinition fluid);
+
+            restoredSlots[i].Add(fluid, savedSlot.amount);
+        }
+
+        return restoredSlots;
+    }
+    
+    public bool ValidateSaveData(MachineSaveData data, GameDefinitionCatalog catalog) {
+        if (!ValidateCraftingSaveData(data, catalog) || !ValidateItemSaveData(data, catalog) || !ValidateFluidSaveData(data, catalog)) {
+            return false;
+        }
+
+        if (string.IsNullOrEmpty(data.activeRecipeId)) {
+            return true;
+        }
+
+        catalog.TryGetRecipe(data.activeRecipeId, out RecipeDefinition recipe);
+
+        InventorySlot[] simulatedOutputs = RestoreValidatedItemSlots(data.outputInventory, catalog);
+        FluidSlot[] simulatedFluidOutputs = RestoreValidatedFluidSlots(data.fluidOutputSlots, catalog);
+
+        foreach (ItemAmount output in recipe.Outputs) {
+            int addedAmount = AddToSlots(simulatedOutputs, output.Item, output.Amount);
+
+            if (addedAmount != output.Amount) {
+                Debug.LogWarning("Machine validation failed: active recipe item outputs do not fit in the saved output inventory.", this);
+                return false;
+            }
+        }
+
+        foreach (FluidAmount output in recipe.FluidOutputs) {
+            float addedAmount = AddFluidToSlots(simulatedFluidOutputs, output.Fluid, output.Amount);
+
+            if (addedAmount < output.Amount) {
+                Debug.LogWarning("Machine validation failed: active recipe fluid outputs do not fit in the saved output slots.", this);
+                return false;
+            }
+        }
+
+        return true;
+    }
+    
     // DEBUG METHODS
     [ContextMenu("Debug/Select First Recipe")]
     private void SelectFirstRecipeForDebug() {

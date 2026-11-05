@@ -38,7 +38,13 @@ public class UniversalPort {
     }
 
     public void AdvanceOutputSlotCursor(int slotCount) {
-        outputSlotCursor = (outputSlotCursor + 1) % slotCount;
+        if (slotCount <= 0) {
+            outputSlotCursor = 0;
+            return;
+        }
+
+        int currentIndex = Mathf.Max(0, outputSlotCursor) % slotCount;
+        outputSlotCursor = (currentIndex + 1) % slotCount;
     }
 
     public void SetRoutingMode(ItemRoutingMode mode) {
@@ -47,5 +53,46 @@ public class UniversalPort {
 
     public void SetRoundRobinDestinationCursor(int index) {
         roundRobinDestinationCursor = index;
-    } 
+    }
+
+    public bool ValidateSaveData(UniversalPortSaveData data) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Port validation failed ({localCell} / {face}): {message}");
+            return false;
+        }
+
+        if (data == null) {
+            return Fail("Missing port data.");
+        }
+
+        if (data.localCell != localCell || data.face != face) {
+            return Fail("Saved port identity does not match.");
+        }
+
+        if (!Enum.IsDefined(typeof(PortMode), data.mode)) {
+            return Fail("Invalid port mode.");
+        }
+
+        if (!Enum.IsDefined(typeof(ItemRoutingMode), data.mode)) {
+            return Fail("Invalid routing mode.");
+        }
+
+        if (data.outputSlotCursor < 0 || data.roundRobinDestinationCursor < 0) {
+            return Fail("Invalid routing cursor.");
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(UniversalPortSaveData data) {
+        if (!ValidateSaveData(data)) return false;
+
+        mode = data.mode;
+        connectionEnabled = data.connectionEnabled;
+        outputSlotCursor = data.outputSlotCursor;
+        itemRoutingMode = data.routingMode;
+        roundRobinDestinationCursor = data.roundRobinDestinationCursor;
+
+        return true;
+    }
 }

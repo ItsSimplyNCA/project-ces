@@ -105,6 +105,83 @@ public class Tank : MonoBehaviour, IFluidTransferEndpoint, IDeconstructionConten
         return slotIndex == 0 ? Remove(requestedAmount) : 0f;
     }
 
+    public TankSaveData CaptureSaveData() {
+        return new TankSaveData {
+            fluidId = fluid != null ? fluid.FluidId : string.Empty,
+            amount = this.amount,
+            isLocked = this.isLocked
+        };
+    }
+
+    public bool ValidateSaveData(TankSaveData data, GameDefinitionCatalog catalog) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Tank validation failed: {message}", this);
+            return false;
+        }
+
+        if (data == null) {
+            return Fail("Missing tank data.");
+        }
+
+        if (catalog == null || !catalog.IsValid) {
+            return Fail("Invalid definition catalog.");
+        }
+
+        if (definition == null) {
+            return Fail("Missing tank definition.");
+        }
+
+        if (float.IsNaN(Capacity) || float.IsInfinity(Capacity) || Capacity <= 0f) {
+            return Fail("Invalid tank capacity.");
+        }
+
+        if (float.IsNaN(data.amount) || float.IsInfinity(data.amount) || data.amount < 0f || data.amount > Capacity) {
+            return Fail("Invalid fluid amount.");
+        }
+
+        if (string.IsNullOrEmpty(data.fluidId)) {
+            if (data.amount != 0f || data.isLocked) {
+                return Fail("Contents or lock exist without a fluid ID");
+            }
+            
+            return true;
+        }
+
+        if (!catalog.TryGetFluid(data.fluidId, out _)) {
+            return Fail($"Unknown fluid ID: {data.fluidId}");
+        }
+
+        if (data.amount == 0f && !data.isLocked) {
+            return Fail("An empty unlocked tank must not retain a fluid ID.");
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(TankSaveData data, GameDefinitionCatalog catalog) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Tank state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(data, catalog)) {
+            return false;
+        }
+
+        FluidDefinition restoredFluid = null;
+
+        if (!string.IsNullOrEmpty(data.fluidId)) {
+            catalog.TryGetFluid(data.fluidId, out restoredFluid);
+        }
+
+        fluid = restoredFluid;
+        amount = data.amount;
+        isLocked = data.isLocked;
+
+        return true;
+    }
+    
+    // DEBUG METHODS
     [ContextMenu("Debug/Add 2.5L Fluid")]
     private void AddFluidForDebug() {
         if (!Application.isPlaying) return;

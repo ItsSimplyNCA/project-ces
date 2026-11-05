@@ -333,9 +333,11 @@ public class GridWorld : MonoBehaviour {
                 return Fail($"Invalid building size: {definition.name}");
             }
 
-            if (!ValidateBuildingConnections(savedBuilding, definition)) {
-                return false;
-            }
+            if (!ValidateBuildingConnections(savedBuilding, definition)) return false;
+            if (!ValidateBuildingMachineCrafting(savedBuilding, definition, catalog)) return false;
+            if (!ValidateBuildingStorageData(savedBuilding, definition, catalog)) return false;
+            if (!ValidateBuildingPowerData(savedBuilding, definition)) return false;
+            if (!ValidateBuildingWorkbenchData(savedBuilding, definition, catalog)) return false;
 
             Vector3Int size = GetRotatedSize(definition, savedBuilding.quarterTurns);
             Vector3Int origin = savedBuilding.origin;
@@ -392,7 +394,82 @@ public class GridWorld : MonoBehaviour {
             }
         }
 
+        Machine machine = building.GetComponent<Machine>();
+        if (machine != null) {
+            data.machine = machine.CaptureSaveData();
+        }
+
+        Silo silo = building.GetComponent<Silo>();
+        if (silo != null) {
+            data.silo = silo.CaptureSaveData();
+        }
+
+        Tank tank = building.GetComponent<Tank>();
+        if (tank != null) {
+            data.tank = tank.CaptureSaveData();
+        }
+
+        PowerGenerator generator = building.GetComponent<PowerGenerator>();
+        if (generator != null) {
+            data.powerGenerator = generator.CaptureSaveData();
+        }
+
+        PowerBreaker breaker = building.GetComponent<PowerBreaker>();
+        if (breaker != null) {
+            data.powerBreaker = breaker.CaptureSaveData();
+        }
+
+        PowerStorage powerStorage = building.GetComponent<PowerStorage>();
+        if (powerStorage != null) {
+            data.powerStorage = powerStorage.CaptureSaveData();
+        }
+
+        Workbench workbench = building.GetComponent<Workbench>();
+        if (workbench != null) {
+            data.workbench = workbench.CaptureSaveData();
+        }
+
         return data;
+    }
+
+    private bool ValidateBuildingMachineCrafting(BuildingSaveData savedBuilding, BuildingDefinition definition, GameDefinitionCatalog catalog) {
+        Machine machine = definition.Prefab.GetComponent<Machine>();
+
+        if (machine == null) {
+            if (savedBuilding.machine != null) {
+                Debug.LogWarning($"World layout validation failed: unexpected machine data on building {definition.BuildingId}.", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        return machine.ValidateSaveData(savedBuilding.machine, catalog);
+    }
+
+    private bool ValidateBuildingStorageData(BuildingSaveData savedBuilding, BuildingDefinition definition, GameDefinitionCatalog catalog) {
+        Silo silo = definition.Prefab.GetComponent<Silo>();
+        Tank tank = definition.Prefab.GetComponent<Tank>();
+
+        if (silo != null) {
+            if (!silo.ValidateSaveData(savedBuilding.silo, catalog)) {
+                return false;
+            }
+        } else if (savedBuilding.silo != null) {
+            Debug.LogWarning($"World layout validation failed: unexpected silo data on building {definition.BuildingId}.", this);
+            return false;
+        }
+
+        if (tank != null) {
+            if (!tank.ValidateSaveData(savedBuilding.tank, catalog)) {
+                return false;
+            }
+        } else if (savedBuilding.tank != null) {
+            Debug.LogWarning($"World layout validation failed: unexpected tank data on building {definition.BuildingId}", this);
+            return false;
+        }
+
+        return true;
     }
 
     private bool ValidateBuildingConnections(BuildingSaveData savedBuilding, BuildingDefinition definition) {
@@ -479,6 +556,50 @@ public class GridWorld : MonoBehaviour {
         return true;
     }
 
+    private bool ValidateBuildingPowerData(BuildingSaveData savedBuilding, BuildingDefinition definition) {
+        bool Fail(string message) {
+            Debug.LogWarning($"World power validation failed: ({definition.BuildingId}): {message}", this);
+            return false;
+        }
+
+        PowerGenerator generator = definition.Prefab.GetComponent<PowerGenerator>();
+        PowerBreaker breaker = definition.Prefab.GetComponent<PowerBreaker>();
+        PowerStorage storage = definition.Prefab.GetComponent<PowerStorage>();
+
+        if (generator != null) {
+            if (!generator.ValidateSaveData(savedBuilding.powerGenerator)) return false;
+            else if (savedBuilding.powerGenerator != null) return Fail("Unexpected generator data.");
+        }
+
+        if (breaker != null) {
+            if (!breaker.ValidateSaveData(savedBuilding.powerBreaker)) return false;
+            else if (savedBuilding.powerBreaker != null) return Fail("Unexpected breaker data.");
+        }
+
+        if (storage != null) {
+            if (!storage.ValidateSaveData(savedBuilding.powerStorage)) return false;
+            else if (savedBuilding.powerStorage != null) return Fail("Unexpected storage data.");
+        }
+
+        return true;
+    }
+
+    private bool ValidateBuildingWorkbenchData(BuildingSaveData savedBuilding, BuildingDefinition definition, GameDefinitionCatalog catalog) {
+        Workbench workbench = definition.Prefab.GetComponent<Workbench>();
+
+        if (workbench == null) {
+            if (savedBuilding.workbench != null) {
+                Debug.LogWarning($"World layout validation failed: unexpected workbench data on building {definition.BuildingId}.", this);
+                return false;
+            }
+
+            return true;
+        }
+
+        return workbench.ValidateSaveData(savedBuilding.workbench, catalog);
+    }
+    
+    //DEBUG METHODS
     [ContextMenu("Debug/Print World Layout")]
     private void PrintWorldLayoutForDebug() {
         if (!Application.isPlaying) return;

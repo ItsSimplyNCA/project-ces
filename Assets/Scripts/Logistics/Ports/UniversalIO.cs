@@ -71,6 +71,79 @@ public class UniversalIO : MonoBehaviour {
         return gridWorld.WorldToCell(neighborCenter);
     }
 
+    public bool ValidateSaveData(IReadOnlyList<UniversalPortSaveData> savedPorts) {
+        bool Fail(string message) {
+            Debug.LogWarning($"Universal I/O validation failed: {message}", this);
+            return false;
+        }
+
+        if (savedPorts == null || savedPorts.Count != ports.Count) {
+            return Fail("Port count does not match.");
+        }
+
+        Dictionary<(Vector3Int Cell, PortFace Face), UniversalPort> currentPorts = new();
+
+        foreach (UniversalPort port in ports) {
+            if (port == null) {
+                return Fail("Missing runtime port.");
+            }
+
+            var key = (port.LocalCell, port.Face);
+
+            if (currentPorts.ContainsKey(key)) {
+                return Fail("Duplicate runtime port.");
+            }
+
+            currentPorts.Add(key, port);
+        }
+
+        HashSet<(Vector3Int Cell, PortFace Face)> restoredKeys = new();
+
+        foreach (UniversalPortSaveData savedPort in savedPorts) {
+            if (savedPort == null) {
+                return Fail("Missing saved port data.");
+            }
+
+            var key = (savedPort.localCell, savedPort.face);
+
+            if (!restoredKeys.Add(key)) {
+                return Fail("Duplicate saved port.");
+            }
+
+            if (!currentPorts.TryGetValue(key, out UniversalPort port)) {
+                return Fail("Saved port does not exist on this building.");
+            }
+
+            if (!port.ValidateSaveData(savedPort)) return false;
+        }
+
+        return true;
+    }
+
+    public bool TryRestoreSaveData(IReadOnlyList<UniversalPortSaveData> savedPorts) {
+        if (!Application.isPlaying) {
+            Debug.LogWarning("Universal I/O state can only be restored in Play mode.", this);
+            return false;
+        }
+
+        if (!ValidateSaveData(savedPorts)) return false;
+
+        Dictionary<(Vector3Int Cell, PortFace Face), UniversalPortSaveData> savedByKey = new();
+
+        foreach (UniversalPortSaveData savedPort in savedPorts) {
+            savedByKey.Add((savedPort.localCell, savedPort.face), savedPort);
+        }
+
+        foreach (UniversalPort port in ports) {
+            port.TryRestoreSaveData(savedByKey[(port.LocalCell, port.Face)]);
+        }
+
+        GetComponentInParent<GridWorld>()?.NotifyLogisticsChanged();
+
+        return true;
+    }
+
+    // DEBUG METHODS
     [ContextMenu("Debug/Print Port Count")]
     private void PrintPortCountForDebug() {
         Debug.Log($"Universal I/O ports: {ports.Count}", this);

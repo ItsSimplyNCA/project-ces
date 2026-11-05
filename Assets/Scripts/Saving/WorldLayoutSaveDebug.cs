@@ -41,7 +41,8 @@ public class WorldLayoutSaveDebug : MonoBehaviour {
 
         return true;
     }
-
+    
+    // DEBUG METHODS
     [ContextMenu("Debug/Capture World Layout Snapshot")]
     private void CaptureSnapshot() {
         if (!CanRun()) return;
@@ -73,13 +74,17 @@ public class WorldLayoutSaveDebug : MonoBehaviour {
             return;
         }
 
+        if (!gridWorld.ValidateWorldLayoutData(data, definitionCatalog)) {
+            Debug.LogError("Cannot test overlap rejection: the original snapshot is invalid", this);
+            return;
+        }
+
         BuildingSaveData first = data.buildings[0];
 
-        data.buildings.Add(new BuildingSaveData {
-            buildingId = first.buildingId,
-            origin = first.origin,
-            quarterTurns = first.quarterTurns
-        });
+        string buildingJson = JsonUtility.ToJson(first);
+        BuildingSaveData duplicate = JsonUtility.FromJson<BuildingSaveData>(buildingJson);
+
+        data.buildings.Add(duplicate);
 
         bool accepted = gridWorld.ValidateWorldLayoutData(data, definitionCatalog);
 
@@ -87,6 +92,33 @@ public class WorldLayoutSaveDebug : MonoBehaviour {
             Debug.LogError("Overlapping building was incorrectly accepted", this);
         } else {
             Debug.Log("Overlapping building correctly rejected", this);
+        }
+    }
+
+    [ContextMenu("Debug/Test Invalid Machine Progress Rejection")]
+    private void TestInvalidMachineProgressRejection() {
+        if (!TryReadSnapshot(out WorldSaveData data)) return;
+
+        if (!gridWorld.ValidateWorldLayoutData(data, definitionCatalog)) {
+            Debug.LogError("Cannot test machine progress rejection: the original snapshot is invalid.", this);
+            return;
+        }
+
+        BuildingSaveData machineBuilding = data.buildings.Find(building => building.machine != null);
+
+        if (machineBuilding == null) {
+            Debug.LogWarning("Capture a layout containing at least one machine.", this);
+            return;
+        }
+
+        machineBuilding.machine.craftingElapsed = -1f;
+
+        bool accepted = gridWorld.ValidateWorldLayoutData(data, definitionCatalog);
+
+        if (accepted) {
+            Debug.LogError("Invalid machine progress was incorrectly accepted.", this);
+        } else {
+            Debug.Log("Invalid machine progress correctly rejected.", this);
         }
     }
 }
