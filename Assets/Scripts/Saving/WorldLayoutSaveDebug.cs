@@ -3,6 +3,7 @@ using UnityEngine;
 public class WorldLayoutSaveDebug : MonoBehaviour {
     [SerializeField] private GridWorld gridWorld;
     [SerializeField] private GameDefinitionCatalog definitionCatalog;
+    [SerializeField] private PlayerSaveHandler playerSaveHandler;
 
     private string capturedJson;
 
@@ -120,5 +121,42 @@ public class WorldLayoutSaveDebug : MonoBehaviour {
         } else {
             Debug.Log("Invalid machine progress correctly rejected.", this);
         }
+    }
+
+    [ContextMenu("Debug/Check Combined Save Snapshot")]
+    private void CheckCombinedSaveSnapshot() {
+        if (!CanRun()) return;
+
+        if (playerSaveHandler == null) {
+            Debug.LogError("Missing player save handler.", this);
+            return;
+        }
+
+        WorldSaveData world = gridWorld.CaptureWorldLayout();
+
+        if (!gridWorld.ValidateWorldLayoutData(world, definitionCatalog)) return;
+
+        GameSaveData snapshot = new() {
+            player = playerSaveHandler.CaptureSaveData(),
+            world = world
+        };
+
+        string json = JsonUtility.ToJson(snapshot);
+        GameSaveData decoded = JsonUtility.FromJson<GameSaveData>(json);
+
+        if (
+            decoded == null ||
+            decoded.player == null ||
+            decoded.player.inventory == null ||
+            decoded.player.inventory.slots == null ||
+            decoded.world == null
+        ) {
+            Debug.LogError("Combined snapshot is missing required data.", this);
+            return;
+        }
+
+        if (!gridWorld.ValidateWorldLayoutData(decoded.world, definitionCatalog)) return;
+
+        Debug.Log($"Combined snapshot verified: {decoded.world.buildings.Count} buildings, {decoded.player.inventory.slots.Count} player inventory slots.", this);
     }
 }

@@ -73,7 +73,7 @@ public class UniversalPort {
             return Fail("Invalid port mode.");
         }
 
-        if (!Enum.IsDefined(typeof(ItemRoutingMode), data.mode)) {
+        if (!Enum.IsDefined(typeof(ItemRoutingMode), data.routingMode)) {
             return Fail("Invalid routing mode.");
         }
 

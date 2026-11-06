@@ -4,7 +4,13 @@
 
 A Unity factory-game aktuális projektkontextusa, a rendelkezésre álló korai beszélgetés és az ebben a chatben megerősített döntések alapján. A legutóbbi döntések az irányadók. Az 1–11. fejezet a design specifikációja; a 12. fejezet külön dátumozott fejlesztési állapotjelentés, amely nem írja felül a design szabályait. Példaszámok nem végleges balance-értékek. **TBD / Future Design** pontokhoz ne találjunk ki végleges szabályokat.
 
-Önálló 3D factory-game, mély anyagfeldolgozással, gyártási láncokkal és technológiai fejlődéssel. A workbench korlátai tudatosan ösztönzik a korai gépi automatizálást.
+Önálló 3D survival/factory-game, mély anyagfeldolgozással, gyártási láncokkal és technológiai fejlődéssel. A workbench korlátai tudatosan ösztönzik a korai gépi automatizálást.
+
+Elfogadott alapirány (2026-11-05): a korai játék survivalhangsúlyos. A technológia és az automatizálás előrehaladtával a túlélési feladatok terhe fokozatosan csökken, és több figyelem jut a gyárépítésre és a bolygó átalakítására. A terraformálás a játék egyik fő, hosszú távú célja; az ipar biztosítja hozzá az eszközöket. A konkrét szükségletek, automatizálási lépcsők és terraformálási mechanikák még TBD. Ez designirány, nem meglévő implementáció.
+
+### Vizuális irány
+
+Elfogadott vizuális cél (2026-11-05): cel-shaded megjelenés, Borderlands ihlette ipari, képregényes karakterrel. A kontúrok, árnyéklépcsők, anyagok és paletta pontos szabályai, valamint a shadermegoldás TBD. A `ConceptArt/2026-11-05/` képei vizuális próbák; a száraz, sziklás bolygókép, az ábrázolt gépek és a képeken megjelenő szállítószalagok nem új gameplay-döntések.
 
 | Inspiráció | Szerep |
 | --- | --- |
@@ -15,7 +21,7 @@ A Unity factory-game aktuális projektkontextusa, a rendelkezésre álló korai 
 | AE2 | Későbbi digital storage és valódi gépekkel működő autocrafting |
 | Eden Crafters | Alakítható voxelterep, tereprendezés és bányászati szabadság |
 
-Jelenleg single-player. Survival és multiplayer lehetséges későbbi bővítések. Nincs blokkonként épített multiblock, wall sharing vagy feszültségtierű elektromos rendszer.
+Jelenleg single-player. A survival az elfogadott játékirány része, részletszabályai és implementációja még tervezendők. Multiplayer lehetséges későbbi bővítés. Nincs blokkonként épített multiblock, wall sharing vagy feszültségtierű elektromos rendszer.
 
 ## 2. Machines és recipes
 
@@ -207,7 +213,7 @@ Csak futó játékban termel, nincs offline progress. Szünetben teljes játék/
 A választott világdesign-irány alakítható voxelterep: ásás, feltöltés és egyengetés. A terepalakítás a bányászatot, a gyárterület előkészítését és a föld alatti építkezést szolgálja. Az Eden Crafters a játékmenet referenciája, nem ismert belső implementáció vagy teljes feature-lista átvételének előírása.
 
 - A voxelterep és az építési rács külön rendszer. Gépek, csövek, kábelek és alapzatok továbbra is a building gridhez igazodnak.
-- A voxeladatból összefüggő terepfelület készülhet; a voxelalap nem jelent kötelező Minecraft-szerű kockás megjelenést. A végleges vizuális stílus és meshképzési algoritmus TBD.
+- A voxeladatból összefüggő terepfelület készülhet; a voxelalap nem jelent kötelező Minecraft-szerű kockás megjelenést. A cel-shaded vizuális irány az 1. fejezet szerint elfogadott; a terep konkrét megjelenítése és meshképzési algoritmusa TBD.
 - Nyersanyagirány: a terepben elhelyezett, kitermelhető érctelepek. Eloszlásuk, kimerülésük és a gépi bányászat működése TBD.
 - A 7. fejezet alátámasztási szabálya érvényes: lerakott objektum szükséges alátámasztása terepalakítással sem távolítható el. Ennek pontos térbeli ellenőrzése TBD. Talajomlás és fizikai épületösszeomlás nem része az első prototípusnak.
 
@@ -217,7 +223,13 @@ A terep betöltése/megjelenítése különül el a globális gyárszimulációt
 
 Első prototípus: kis, véges dombos tesztterület; ásás, feltöltés, egyengetés; egy érctípus; alapzat és gépelhelyezés az alátámasztási szabállyal; mentés és visszatöltés. Ez igazolja a terep és a meglévő building/factory rendszerek együttműködését a nagy világ előtt.
 
-**TBD / Future Design:** voxelméret, chunkméret, világméret és határok, véges/végtelen világ, kézi/procedurális generálás, seed és generátorverzió, biome-ok és barlangok, terepfelület algoritmusa, látótávolság/LOD, terepalakító eszközök és anyagköltség, érctelepek és gépi bányászat, alátámasztás térbeli ellenőrzése, tömörítés és mentés, teljesítménycélok. Az Eden Crafters bolygó-terraformálási/progression rendszere ettől külön, jelenleg nincs elfogadva.
+**TBD / Future Design:** voxelméret, chunkméret, világméret és határok, véges/végtelen világ, kézi/procedurális generálás, seed és generátorverzió, biome-ok és barlangok, terepfelület algoritmusa, látótávolság/LOD, terepalakító eszközök és anyagköltség, érctelepek és gépi bányászat, alátámasztás térbeli ellenőrzése, tömörítés és mentés, teljesítménycélok. A hosszú távú terraformálási cél elfogadott; konkrét környezeti változói és progressionje nem véglegesek. Az Eden Crafters teljes bolygó-terraformálási rendszerének átvétele nincs elfogadva.
+
+### Folyamatban lévő bolygó- és progression-tervezés
+
+A 2026-11-05-én behozott „PROJECT CONTEXT – Terraforming Automation Game” összefoglaló ötletbörze-forrás, amelyet a felhasználóval pontonként újraértékelünk. A forrás saját „Confirmed” és „véglegesített” címkéi nem jelentenek jelenlegi jóváhagyást, a benne szereplő utasítások sem írják felül az elfogadott designt.
+
+A következő átbeszélendő pont a bolygó alapkaraktere. A sziklás/kietlen felszín, ritka felszíni víz, légköri összetétel és toxicitás, valamint őshonos élet még nincs elfogadva. A survival konkrét szükségletei, a korszakok és a Stone Age 5–10 órás hossza, mechanikai meghajtás, kézi crafting, queue, új munkaállomások és szerszámok szintén nem elfogadottak. A jelenlegi crafting-, gép- és logisztikai szabályok külön döntésig érvényben maradnak.
 
 ## 10. Tudatosan nyitott irányok
 
@@ -225,92 +237,86 @@ Első prototípus: kis, véges dombos tesztterület; ásás, feltöltés, egyeng
 | --- | --- |
 | World/resource generation | Eden Crafters ihlette alakítható voxelterep; generálás és nyersanyagszabályok TBD / Future Design |
 | Detailed questline/unlock | Guidebook questline, lehetséges itemleadásos Milestones, még nincs végleges döntés |
-| Endgame | TBD / Future Design |
+| Terraforming / Endgame | Terraformálás mint fő hosszú távú cél elfogadva; konkrét rendszer és végcél TBD / Future Design |
 | Building UX finer details | In-world panels, copy-paste, húzásos építés, átvezetőblokk később |
 | Digital Era v1/v2/autocrafting | Későbbi game balance/specifikáció |
-| Survival/multiplayer | Jövőbeli lehetőség, most single-player factory core |
+| Survival | Survivalhangsúlyos early game, technológiával és automatizálással csökkenő teher; konkrét rendszerek TBD |
+| Multiplayer | Jövőbeli lehetőség; jelenleg single-player |
 | Balance | Tierváltozatok, anyagok, receptek, kapacitások, sebességek később |
 
 ## 11. Codex implementációs alapelvek
 
-Aktuális döntések felülírják az inspirációk és korai javaslatok szabályait. UI, adatmodell és simulation különüljön el. TBD érték ne váljon észrevétlenül végleges designná. Save/load és új lerakás eltérő életciklus. Balance-szorzók és későbbi contention policy konfigurálhatók legyenek. Power Storage saját transfer limitet ne vezessünk be. Nincs fizikai itemutazás, RNG output, automatikus pipe-kapcsolódás vagy blokkonkénti multiblock. Későbbi multiplayer/survival miatt most nem szükséges ezek infrastruktúráját építeni.
+Aktuális döntések felülírják az inspirációk és korai javaslatok szabályait. UI, adatmodell és simulation különüljön el. TBD érték ne váljon észrevétlenül végleges designná. Save/load és új lerakás eltérő életciklus. Balance-szorzók és későbbi contention policy konfigurálhatók legyenek. Power Storage saját transfer limitet ne vezessünk be. Nincs fizikai itemutazás, RNG output, automatikus pipe-kapcsolódás vagy blokkonkénti multiblock. A multiplayer továbbra is jövőbeli lehetőség; a survival elfogadott irány, de részletspecifikáció nélkül ne vezessünk be önkényesen szükségleteket vagy büntetéseket.
 
-## 12. Fejlesztési állapot és hátralévő munka — 2026-11-03
+## 12. Fejlesztési állapot és hátralévő munka — 2026-11-05
 
 ### Forrás és ellenőrzési korlát
 
-Coding Cody összefoglalója a Designer Danyval történt egyeztetéshez, a jelenlegi repó és saját fejlesztési előzményei alapján. Forráschat: `01a0fc74-a92f-7691-a13f-e799369cc6af`, első összefoglaló turn: `01a1a08d-ad3c-7821-a140-bcb9b96952a7`, nap végi frissítés: `01a1a1e1-ad2c-7af1-887c-48555ddccab0`. Ellenőrzött commit: `edd9eca` (Add player save/load and world layout serialization). Projekt: `H:/git-repo-for-unity/project-ces`, Unity 6000.3.11f1, URP, új Input System.
+Napzáró egyeztetés Coding Codyval, a jelenlegi repó és saját fejlesztési előzményei alapján. Forráschat: `01a0fc74-a92f-7691-a13f-e799369cc6af`, aktuális összefoglaló turn: `01a1ac2c-5c92-7362-820d-4a4bb45fda52`. Ellenőrzött commit: `e31ea7a` — Add factory component save data, validation and restore support. Projekt: `H:/git-repo-for-unity/project-ces`, Unity 6000.3.11f1, URP, új Input System. Ez a fejezet a november 3-i `edd9eca` állapotjelentést frissíti; a korábbi állapot Gitből visszakereshető.
 
-Ez fájlalapú állapotfelmérés: Cody most nem indított Play módot és nem futtatott teljes tesztkészletet. A kódban meglévő működés nem jelent teljes runtime-validációt. Az Obsidian vault 2026-10-12-i auditját és feladatstátuszait ez az egyeztetés nem frissítette.
+Fájlalapú állapotfelmérés: Cody nem indított Unity Play módot vagy buildet, és nem futtatott teljes tesztkészletet. A kódban meglévő működés nem jelent runtime-validációt. Az Obsidian vault 2026-10-12-i auditját és feladatstátuszait ez a napzárás nem frissítette. A designelfogadás nem implementációs státusz.
 
-A 6. fejezetbe átvezetett energia-döntések Cody által jelzett korábbi kifejezett felhasználói döntések. Az alábbi implementációs eltérések önmagukban nem új design-döntések.
+### Mai design-döntések és tervezési folytatás
+
+- Survivalhangsúlyos early game, technológiai fejlődéssel és automatizálással fokozatosan csökkenő survivalteher.
+- A terraformálás fő hosszú távú cél; az ipar biztosítja hozzá az eszközöket.
+- Cel-shaded, Borderlands ihlette vizuális irány; három concept art készült. A konkrét shader, paletta és bolygókép még nincs véglegesítve.
+- Az áthozott terraformálási összefoglalót pontonként vizsgáljuk újra. Következő téma: a bolygó alapkaraktere. A forrás további állításai, beleértve saját „véglegesített” pontjait, külön jóváhagyásig ötletek maradnak. A jelenlegi crafting és logisztika nincs felülírva.
+
+Cody fejlesztési chatjében a november 3-i egyeztetés óta nem született új kifejezett gameplay-design döntés; a munka a meglévő mentési irányt valósította meg.
 
 ### Kódban meglévő prototípusrendszerek
 
-- Player: mozgás, kameranézés, ugrás, célkereszt.
-- Building: gridfoglalás, fix többcellás prefabok, forgatás, előnézet, inventoryból lerakás, nyomva tartott bontás és veszteségmegerősítések, teljes gridméretű kijelölés.
-- Inventory: slotok, stackek, kezdőitemek, egyedi Fluid Cell-tartalom és állapotmegőrző átviteli metódusok.
-- Machine: aktív/kiválasztott recept, egy folyamat, induláskori inputlevonás, outputhely-ellenőrzés, progressmegőrzés, ON/OFF, tierkompatibilitás és gyorsítás; fluidbufferek és cellás kezelés.
-- Universal I/O: Layer 0 portok, portmódok, külön kapcsolati engedélyek.
-- Item/fluid logisztika: gráfos átvitel, közös szakaszkapacitás, alternatív utak, Nearest/Round Robin és outputbejárási kurzorok; pipe/kábel kapcsolati vizualizáció.
-- Silo/Tank: egy anyagtípus, kapacitás, type lock, GUI, kézi és hálózati kezelés.
-- Workbench: időzített folyamat player inventoryból, cancelkor visszaadás, GUI-bezáráskor megszakítás; a teljes zárolás és bontásvédelem még auditálandó.
-- Energia: tesztgenerátor, kábelkapacitások, részleges ellátás és lassulás, breaker/túlterhelési prototípus, Power Storage töltés/kisütés/tárolóközi átvitel/átfolyás és statisztika.
-- Pause: Escape/Resume, timeScale-alapú szünet. Energiaoldalon komponens-, hálózat-, végpont- és útvonalcache topológiaváltozási érvénytelenítéssel.
+A korábbi alapok továbbra is jelen vannak: player mozgás/nézés/ugrás; gridalapú építés és bontás veszteségmegerősítéssel; inventory és Fluid Cell-adatok; gépi item/fluid processing külön aktív és kiválasztott recepttel; Universal I/O; gráfos item/fluid logisztika Nearest/Round Robin móddal; Silo/Tank; Workbench; tesztgenerátor, kábelkorlátok, breaker és Power Storage; pause és energiaoldali cache.
 
-Az item/fluid hálózatok jelenleg másodperces központi tickekkel futnak. A fluidelosztás 0.25 L-es, az energiaelosztás 0.25-ös adagokat használ. Ezek implementációs paraméterek, nem végleges balance-döntések. A gépek és a Workbench saját Update-ben dolgoznak, az energiaelosztás képkockánként fut; a 9. fejezet központi szimulációs célja még nem teljesült.
+Az item/fluid hálózatok másodperces központi tickeket használnak; a fluidelosztás 0.25 L-es, az energiaelosztás 0.25-ös adagokat használ. Ezek implementációs paraméterek. A gépek és a Workbench saját Update-ben dolgoznak, az energiaelosztás képkockánként fut. A rendereléstől/chunkunloadtól független teljes adatalapú gyárszimuláció még hiányzik.
 
-### Korábbi runtime-visszajelzések
+### Mentés: komponensszintű támogatás
 
-Cody előzményeiben kifejezetten visszaigazolt több inventory-, gép-GUI- és craftingjavítás, a pipe-kapcsolatok vizualizációja és a machine fluid output → pipe → Tank Steam-átvitel javítása. A helyreállított projekt elindulását is visszajelezte a felhasználó. Ezek nem teljes regressziós ellenőrzések.
+**A kódban meglévő capture/validálás/restore:**
 
-Az energia-, breaker-, soros/párhuzamos tároló-, pause- és cache-edge case-ek teljes igazolása még hátravan; az egyszerű „ok” válasz nem elegendő minden teszteset sikerének megállapításához.
+- Inventory és player: üres slotok, Fluid Cell-típus/mennyiség, pozíció, testforgatás, kamerapitch. A korábbi `fluidAmount` kihagyás javítva. A player restore kezeli a CharacterControllert és nullázza a függőleges sebességet; a player/inventory restore jelenleg az aktuálissal azonos slotszámot követel.
+- Külön inventory/player debug JSON-fájlok, verzióellenőrzéssel, `.tmp` írással és meglévő mentésnél `.bak` backuppal. A backup nem jelent automatikus helyreállítást.
+- Machine: kiválasztott/aktív recept, ON/OFF, előrehaladás, item/fluid bufferek és Fluid Cell-tartalom. Az aktív recept outputhelyét szimulált tárolókon ellenőrzi; ismert validálási hiba lent.
+- Silo: itemtípus, mennyiség, lock és egyedi Fluid Cellek FIFO-sorrendje. Tank: fluidtípus, mennyiség és lock; üresen zárolt típus megőrizhető.
+- PowerGenerator/PowerBreaker: kapcsolóállapot és túlterhelésjelzés; tripped állapot nem párosulhat bekapcsolt/zárt állapottal. PowerStorage: készlet és kapacitásvalidálás; pillanatnyi forgalom újraszámítandó.
+- UniversalPort/UniversalIO: portazonosság, mód, kapcsolati engedély, routingmód és kurzorok. Párosítás helyi koordináta és face alapján, nem listasorrend szerint; ismert enumvalidálási hiba lent. Az item-routing outputkurzora az aktuális slotszámhoz igazodik, nulla slotot és nagy mentett értéket is kezel.
+- Workbench: aktív recept, előrehaladás, már levont/visszaadásra váró alapanyagok; az aktív recept szükségletének összevetése a mentett tartalommal. A restore player inventoryt kap és nem von le ismét inputot. A teljes betöltés GUI/cancel viselkedése még tisztázandó.
+- World snapshot: cellaméret, épülettípus-ID, gridorigin, forgatás, pipe/kábel flagjei, portok és az épületek fenti komponensadatai; a GridWorld rögzíti és validálja őket. A validálás kiterjed a definíciókra, méretekre, koordinátákra, átfedésekre és komponensadatokra. Ez még nem teljes világ-restore.
 
-### Mentés: nap végi állapot — 2026-11-03
+Források: `Assets/Scripts/Saving/` adat- és debugosztályai; `Assets/Scripts/Building/GridWorld.cs`; a Machine, Silo, Tank, Workbench, power- és portkomponensek capture/validálás/restore metódusai.
 
-A mai munka a meglévő mentési irány implementációját vitte előre; Cody chatjében az előző egyeztetés óta nem született új gameplay-design döntés. Az opcionális, ComputerCraft ihlette integrált Digital Era programozhatóság a 8. fejezetben rögzített jövőbeli irány, implementációja nincs.
+A MachineSaveDebug, StorageSaveDebug, PowerSaveDebug és PortSaveDebug mind szerepel a mentett SaveDebug objektumon. A katalógus/UI-referenciák beállítva; a futás közben lerakott épületek célmezői teszteléskor töltendők. Az átfedési negatív teszt teljes épületadatot másol, így nem hiányzó portadatok miatt utasítja el a példányt. Hibás gép-előrehaladásra is van negatív tesztművelet. Ezek megléte nem igazolja a sikeres lefutást.
 
-**Kódban elkészült:**
+### Runtime-bizonyíték és ismert hibák
 
-- Típusazonosítók, definíciókatalógus, lookup és ID-ellenőrzés. A korábbi auditban 18 item-, 2 fluid-, 5 recipe- és 14 buildingreferencia szerepelt.
-- Inventory capture/validált restore üres slotokkal és Fluid Cell-tartalommal; a korábban kimaradt `fluidAmount` mentése javítva. A restore csak teljes siker után cseréli le az inventoryt, jelenleg az aktuálissal azonos slotszámot követel.
-- Memóriabeli inventory JSON-pillanatkép és restore; külön `inventory-debug.json` fájlos mentés/betöltés, verzióellenőrzés, `.tmp` írás és meglévő mentésnél `.bak` backup.
-- Playerpozíció, testforgatás, kamerapitch és inventory capture/restore; véges számok és quaternion validálása, CharacterController ideiglenes kikapcsolása, pitch visszaállítása és függőleges sebesség nullázása. Külön `player-debug.json` fájlos mentési/betöltési debug útvonal.
-- Világelrendezés capture: cellaméret, épülettípus-ID, gridorigin és forgatás, többcellás épületenként egy bejegyzés, koordináták szerint rendezve.
-- Pipe/kábel kapcsolati flagjeinek és a portok helyi cellájának, face-ének, módjának, kapcsolati engedélyének és routingkurzorainak capture-je.
-- Világadat-validálás: cellaméret, ID/prefab, pozitív épületméret, forgatás, koordinátatartomány, átfedések; kapcsolati bitek, várható Layer 0 portok, hiányzó/ismétlődő portok, enumértékek és nemnegatív routingkurzorok.
-- Nem destruktív világdebug: capture, JSON-visszaolvasás, validálás és szándékosan átfedő épület elutasítását vizsgáló tesztművelet. A mentési debugkomponensek a FactoryPrototype jelenetben szerepelnek, vizsgált referenciáik be vannak kötve.
+Korábbi felhasználói visszaigazolás van több inventory-/gép-GUI-/craftingjavításról, a pipe-vizualizációról és a machine fluid output → pipe → Tank Steam-átvitelről. Ezek nem teljes regressziós ellenőrzések. Az új mentési lépésekhez nincs részletes tesztlog vagy eredménybeszámoló; az egyszerű „ok” nem igazolja minden eset sikerét.
 
-Forrásfájlok a `Assets/Scripts/Saving/` könyvtárban: `GameSaveData.cs`, `GameDefinitionCatalog.cs`, `InventorySaveDebug.cs`, `InventoryFileSaveDebug.cs`, `PlayerSaveHandler.cs`, `PlayerFileSaveDebug.cs`, `WorldSaveData.cs`, `WorldLayoutSaveDebug.cs`; továbbá `Assets/Scripts/Inventory/PlayerInventory.cs` és `Assets/Scripts/Building/GridWorld.cs`.
+Cody szerint az `inventory-debug.json` továbbra is létezik november 3-i időbélyeggel; a jelenlegi persistentDataPath alatt `player-debug.json` nincs. Az inventoryfájl megléte a fájlírást támasztja alá, a sikeres restore-t és az új komponensek runtime-roundtripjét nem.
 
-**Runtime-bizonyíték:** Cody megtalálta a november 3-án módosított, érvényes, `version = 1` értékű `inventory-debug.json` fájlt. Ez a fájlírás megtörténtét igazolja, a sikeres restore-t önmagában nem. A jelenlegi projektbeállításokból származtatott mentési helyen `player-debug.json` fájlt nem talált. A player fájlos round-trip és a világvalidátor negatív tesztjeinek eredményére nincs részletes felhasználói visszaigazolás. Cody most nem indított Play módot, teljes fordítást vagy tesztkészletet.
+**Közvetlenül javítandó mentési hibák:**
 
-**Teljes játék-/világmentés és visszatöltés még nincs.** Hátravan:
+- `UniversalPort.cs`: a routingvalidálás `Enum.IsDefined(typeof(ItemRoutingMode), data.mode)` hívása helyett a `data.routingMode` ellenőrzése szükséges. Az eltérő enumtípus kivételt okozhat; a portvalidálás/restore nem tekinthető készre igazoltnak.
+- `Machine.cs`: a craftingvalidálásból hiányzik a `craftingElapsed >= duration` ellenőrzés. A befejezési határt elérő mentett előrehaladást jelenleg nem utasítja el.
 
-- Player fájlos round-trip, inventory-visszatöltés és világvalidátor negatív tesztek egyértelmű runtime-ellenőrzése.
-- A `WorldSaveData` bekötése a jelenleg csak playeradatot tartalmazó `GameSaveData` mellé; világfájl-mentés és épületeket rekonstruáló visszatöltés.
-- Stabil objektumpéldány-ID-k és teljes világállapot; gépek kiválasztott/aktív receptje, progress, item/fluid bufferek.
-- Portok, kapcsolatok és routingkurzorok tényleges restore-ja; a helyben csere után megőrzött kapcsolati memória mentése.
-- Silo/Tank tartalom és lock; kapcsolók, generátor/breaker leoldási okok, Power Storage készlet.
-- Biztonságos teljes betöltési tranzakció, graph/cache újraépítés, normál Save/Load felület és autosave; migráció és automatikus backup-helyreállítás.
+**További ismert eltérések és korlátok:**
 
-**Validálási és formátumkorlátok:** a világvalidátor még nem ellenőrzi a terepi alátámasztást. Engedélyezett kapcsolathoz nem követel jelenlegi szomszédot: az ideiglenesen szomszéd nélküli megjegyzett engedély elfogadható. A routingkurzoroknál csak a nemnegativitás ellenőrzött, a restore kompatibilitáskezelése hátravan. A backup létrehozása nem jelent automatikus helyreállítást. A debugformátumok és verzióellenőrzések nem zárják le a végleges save format/migráció designját.
+- SiloT2 prefab még T1 tárolódefinícióra mutat, így T1-kapacitással működik.
+- Workbench HasContents mellett továbbra sem implementálja az IDeconstructionContents interfészt; a bontási figyelmeztetés hiányos. Teljes inventoryzárolás korábbi audit szerint nem látható minden mutáló API-n.
+- A buildbeállításban még SampleScene szerepel. A Workbench aktív állapotának teljes betöltése és a GUI-bezárásos cancel összehangolandó.
+- Itemtípusonként egy inputslot a design, a kód azonos itemet több slotba tölthet. Megerősítéses inputfluid Flush korábban nem volt azonosítva; cellába visszavétel van.
+- Generátor továbbra is fuel nélküli tesztforrás; fuelkezelés és fuelhiány utáni restart hiányzik.
+- Breaker Unity XYZ mérete `(1,2,1)`, eltér a design 2×1×2 méretétől; külön tisztázandó.
+- A korábbi bontási auditban a GridWorld.CanRemoveBuilding() nem volt bekötve a vizsgált útvonalba. Az alátámasztás védelme nem tekinthető késznek; a világvalidátor sem ellenőrzi a terepi alátámasztást.
+- A megjegyzett kapcsolati engedélyhez szándékosan nem szükséges jelenlegi szomszéd. A lebontott objektumok külön runtime kapcsolati emlékezete még nincs perzisztálva.
+- Hurkolt/több betáplálású energiahálózatok overload-kezelése és energia/pause/cache edge case-ek továbbra is ellenőrzendők. A cache nem bizonyít maximális áramlást vagy teljes optimalizálást.
 
-### Design–implementáció eltérések és ellenőrzendő pontok
+### Hátralévő mentési munka és következő lépések
 
-- Itemtípusonként egy inputslot a design; a kód azonos itemet több slotba is tölthet.
-- Megerősítéses inputfluid Flush nincs azonosítva; a kód cellába visszavételt támogat.
-- A generátor tüzelőanyag nélküli tesztforrás. Fuelinventory, automatikus fuelbefogadás/égetés és fuelhiány utáni restart hiányzik.
-- A Breaker building-definíció/prefab Unity XYZ mérete `(1,2,1)`. A design 2×1×2 mérete a saját, magasságot utolsó helyre tevő konvenciójával sem ezt jelenti. A kívánt méret tisztázandó; a design nincs a prefabhoz igazítva.
-- A `GridWorld.CanRemoveBuilding()` létezik, de a vizsgált bontási útvonal nem hívja: az alátámasztás védelme nem tekinthető késznek.
-- Workbench tartalomjelzése nincs bekötve az `IDeconstructionContents` interfészbe; bontási figyelmeztetése hiányos. Teljes inventoryzárolás nem látható minden mutáló API-n.
-- Hurkolt/elágazó/több betáplálású energiahálózatokon a túlterhelési védelem kiválasztása bejárási sorrendtől függhet. A cache nem bizonyít maximális áramlást vagy teljes teljesítményoptimalizálást.
-- A globális szimuláció aktív, lerakott GameObjectekre támaszkodik. Chunkunloadtól és rendereléstől teljesen független adatmodell még nincs.
+**Teljes játék-/világmentés továbbra sincs.** A GameSaveData csak verziót és playeradatot tartalmaz, WorldSaveData nincs hozzákapcsolva. Nincs világfájl-írás/olvasás, teljes épületrekonstrukció vagy egyetlen összehangolt player–világ restore. Stabil objektumpéldány-ID-k, cserekapcsolat-memória mentése, teljes betöltési tranzakció és graph/cache újraépítés is rendezendő. Autosave, normál mentési felület, migráció és automatikus backup-helyreállítás hiányzik. A debugformátum nem végleges mentésdesign.
 
-### Hátralévő rendszerek és javasolt sorrend
+Javasolt sorrend: két validálási hiba javítása és célzott ellenőrzése → komponensszintű roundtripek → összehangolt player–világ adat és teljes előzetes validálás → épületek és belső állapotuk visszaépítése → világfájl és felhasználói mentési folyamat. A világ lecserélése nem eredményezhet kiürített, resetelt gyárat. Ez fejlesztési javaslat, nem új prioritásdöntés.
 
-Közvetlen javasolt folytatás: player fájlos round-trip és világvalidátor negatív tesztek runtime-ellenőrzése → épületek belső állapotának capture/validálása és kapcsolati restore API → teljes világfájl és biztonságos visszatöltés. A jelenlegi világ lecserélését csak a belső állapotok megőrzésével kössük be, hogy a betöltés ne hozzon létre kiürített, resetelt gyárat. Ezzel együtt rendezendők a fenti designeltérések és az energia/pause/logisztika célzott runtime-tesztjei. Ez javasolt fejlesztési sorrend, nem új felhasználói prioritásdöntés.
+További tervezendő/fejlesztendő területek: Chest, Lifepod és kezdő játékmenet; nyersanyagbeszerzés, bányászat és voxelterep; bolygó és világ/resource generation; survival/progression és terraformálás; guidebook/questline/milestone-ok; anyag-, recept- és gépkínálat, balansz. Ezekre a mai designelfogadás nem jelent implementációt.
 
-További core munka: Chest, Lifepod és kezdő játékmenet; nyersanyagbeszerzés/bányászat; voxelterep és terepalakítás; világ- és nyersanyaggenerálás; progression/guidebook/questline/milestone-ok; anyag-, recept- és gépkínálat, balansz. A voxelvilág jelenleg designirány, implementációját Cody nem találta a scriptállományban.
-
-Későbbi vagy nyitott scope: Digital Era/autocrafting, in-world panelek, inventoryfejlesztések és teljes drag/drop UX, config copy-paste, húzásos/tömeges építés. Survival és multiplayer továbbra is jövőbeli lehetőség; hiányuk nem a jelenlegi single-player core hibája. A részletszabályok az érintett fejezetek TBD pontjai szerint maradnak nyitva.
+Későbbi/nyitott scope: Digital Era és opcionális programozhatóság, in-world panelek, inventoryfejlesztések és drag/drop UX, config copy-paste, húzásos építés. Multiplayer továbbra is jövőbeli lehetőség. A részletszabályok az érintett fejezetek TBD pontjai szerint nyitottak.

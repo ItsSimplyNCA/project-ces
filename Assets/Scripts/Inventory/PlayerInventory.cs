@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.Data.Common;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class PlayerInventory : MonoBehaviour {
     [System.Serializable] public class StartingItem {
@@ -424,7 +426,22 @@ public class PlayerInventory : MonoBehaviour {
         return data;
     }
 
+    public bool ValidateSaveData(InventorySaveData data, GameDefinitionCatalog catalog) {
+        return TryBuildRestoredSlots(data, catalog, out _);
+    }
+
     public bool TryRestoreSaveData(InventorySaveData data, GameDefinitionCatalog catalog) {
+        if (!TryBuildRestoredSlots(data, catalog, out InventorySlot[] restoredSlots)) {
+            return false;
+        }
+
+        slots = restoredSlots;
+        return true;
+    }
+
+    private bool TryBuildRestoredSlots(InventorySaveData data, GameDefinitionCatalog catalog, out InventorySlot[] preparedSlots) {
+        preparedSlots = null;
+
         bool Fail(string message) {
             Debug.LogWarning($"Inventory load failed: {message}", this);
             return false;
@@ -513,8 +530,7 @@ public class PlayerInventory : MonoBehaviour {
             }
         }
 
-        slots = restoredSlots;
-
+        preparedSlots = restoredSlots;
         return true;
     }
 

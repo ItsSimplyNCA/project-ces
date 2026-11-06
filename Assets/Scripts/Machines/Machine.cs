@@ -594,6 +594,10 @@ public class Machine : MonoBehaviour, IItemTransferEndpoint, IFluidCellTransferE
         float duration = savedActiveRecipe.Duration;
 
         if (float.IsNaN(duration) || float.IsInfinity(duration) || duration <= 0f) {
+            return Fail("Active recipe has an invalid duration.");
+        }
+
+        if (data.craftingElapsed >= duration) {
             return Fail("Active crafting progress reaches or exceeds completion.");
         }
 

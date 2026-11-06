@@ -6,6 +6,7 @@ using UnityEngine;
 [Serializable] public class GameSaveData {
     public int version = 1;
     public PlayerSaveData player = new();
+    public WorldSaveData world;
 }
 
 [Serializable] public class PlayerSaveData {
